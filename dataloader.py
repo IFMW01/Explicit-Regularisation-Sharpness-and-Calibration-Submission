@@ -5,6 +5,36 @@ import os
 import numpy as np
 import argparse
 
+
+class CIFAR10RandomLabels(torchvision.datasets.CIFAR10):
+  """CIFAR10 dataset, with support for randomly corrupt labels.
+
+  Params
+  ------
+  corrupt_prob: float
+    Default 0.0. The probability of a label being replaced with
+    random label.
+  num_classes: int
+    Default 10. The number of classes in the dataset.
+  """
+  def __init__(self, corrupt_prob=0.0, num_classes=10, **kwargs):
+    super(CIFAR10RandomLabels, self).__init__(**kwargs)
+    self.n_classes = num_classes
+    if corrupt_prob > 0:
+      self.corrupt_labels(corrupt_prob)
+
+  def corrupt_labels(self, corrupt_prob):
+    labels = np.array(self.targets)
+    np.random.seed(12345)
+    mask = np.random.rand(len(labels)) <= corrupt_prob
+    rnd_labels = np.random.choice(self.n_classes, mask.sum())
+    labels[mask] = rnd_labels
+    # we need to explicitly cast the labels from npy.int64 to
+    # builtin int type, otherwise pytorch will fail...
+    labels = [int(x) for x in labels]
+
+    self.targets = labels
+
 def get_relative_path(file):
     script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
     return os.path.join(script_dir, file)
@@ -77,6 +107,50 @@ def load_dataset(dataset='cifar10', datapath='cifar10/data', batch_size=128, \
                                                download=False, transform=transform)
         test_loader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
                                                   shuffle=False, num_workers=threads)
+        
+    if dataset == 'cifar10r':
+        normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
+                                         std=[x/255.0 for x in [63.0, 62.1, 66.7]])
+
+        data_folder = get_relative_path(datapath)
+        if raw_data:
+            transform = transforms.Compose([
+                transforms.ToTensor()
+            ])
+        else:
+            transform = transforms.Compose([
+                transforms.ToTensor(),
+                normalize,
+            ])
+        trainset = CIFAR10RandomLabels(1.0,root=data_folder,download=True,transform=transform,train=True)
+       
+        # If data_split>1, then randomly select a subset of the data. E.g., if datasplit=3, then
+        # randomly choose 1/3 of the data.
+        if data_split > 1:
+            indices = torch.tensor(np.arange(len(trainset)))
+            data_num = len(trainset) // data_split # the number of data in a chunk of the split
+
+            # Randomly sample indices. Use seed=0 in the generator to make this reproducible
+            state = np.random.get_state()
+            np.random.seed(0)
+            indices = np.random.choice(indices, data_num, replace=False)
+            np.random.set_state(state)
+
+            train_sampler = torch.utils.data.sampler.SubsetRandomSampler(indices)
+            train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
+                                                       sampler=train_sampler,
+                                                       shuffle=False, num_workers=threads)
+        else:
+            kwargs = {'num_workers': 2, 'pin_memory': True}
+            train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
+                                                      shuffle=False, **kwargs)
+        testset = torchvision.datasets.CIFAR10(root=data_folder, train=False,
+                                               download=False, transform=transform)
+        test_loader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
+                                                  shuffle=False, num_workers=threads)
+
+        
+
 
     return train_loader, test_loader
 

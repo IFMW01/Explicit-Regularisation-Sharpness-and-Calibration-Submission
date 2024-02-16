@@ -22,7 +22,7 @@ import plot_2D
 import plot_1D
 import model_loader
 import scheduler
-import mpi4pytorch as mpi
+# import mpi4pytorch as mpi
 
 def name_surface_file(args, dir_file):
     # skip if surf_file is specified in args
@@ -59,7 +59,7 @@ def setup_surface_file(args, surf_file, dir_file):
     f['dir_file'] = dir_file
 
     # Create the coordinates(resolutions) at which the function is evaluated
-    xcoordinates = np.linspace(args.xmin, args.xmax, num=args.xnum)
+    xcoordinates = np.linspace(args.xmin, args.xmax, num=int(args.xnum))
     f['xcoordinates'] = xcoordinates
 
     if args.y:
@@ -127,8 +127,8 @@ def crunch(surf_file, net, w, s, d, dataloader, loss_key, acc_key, comm, rank, a
 
         # Send updated plot data to the master node
         syc_start = time.time()
-        losses     = mpi.reduce_max(comm, losses)
-        accuracies = mpi.reduce_max(comm, accuracies)
+        # losses     = mpi.reduce_max(comm, losses)
+        # accuracies = mpi.reduce_max(comm, accuracies)
         syc_time = time.time() - syc_start
         total_sync += syc_time
 
@@ -144,9 +144,9 @@ def crunch(surf_file, net, w, s, d, dataloader, loss_key, acc_key, comm, rank, a
 
     # This is only needed to make MPI run smoothly. If this process has less work than
     # the rank0 process, then we need to keep calling reduce so the rank0 process doesn't block
-    for i in range(max(inds_nums) - len(inds)):
-        losses = mpi.reduce_max(comm, losses)
-        accuracies = mpi.reduce_max(comm, accuracies)
+    # for i in range(max(inds_nums) - len(inds)):
+    #     losses = mpi.reduce_max(comm, losses)
+    #     accuracies = mpi.reduce_max(comm, accuracies)
 
     total_time = time.time() - start_time
     print('Rank %d done!  Total time: %.2f Sync: %.2f' % (rank, total_time, total_sync))
@@ -165,7 +165,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', default=128, type=int, help='minibatch size')
 
     # data parameters
-    parser.add_argument('--dataset', default='cifar10', help='cifar10 | imagenet')
+    parser.add_argument('--dataset', default='cifar10', help='cifar10 | cifar10r')
     parser.add_argument('--datapath', default='cifar10/data', metavar='DIR', help='path to the dataset')
     parser.add_argument('--raw_data', action='store_true', default=False, help='no data preprocessing')
     parser.add_argument('--data_split', default=1, type=int, help='the number of splits for the dataloader')
@@ -202,6 +202,7 @@ if __name__ == '__main__':
     parser.add_argument('--vlevel', default=0.5, type=float, help='plot contours every vlevel')
     parser.add_argument('--show', action='store_true', default=False, help='show plotted figures')
     parser.add_argument('--log', action='store_true', default=False, help='use log scale for loss values')
+    parser.add_argument("--test", action="store_true", default=False, help="use test data")
     parser.add_argument('--plot', action='store_true', default=False, help='plot figures after computation')
 
     args = parser.parse_args()
@@ -211,8 +212,9 @@ if __name__ == '__main__':
     # Environment setup
     #--------------------------------------------------------------------------
     if args.mpi:
-        comm = mpi.setup_MPI()
-        rank, nproc = comm.Get_rank(), comm.Get_size()
+        pass
+        # comm = mpi.setup_MPI()
+        # rank, nproc = comm.Get_rank(), comm.Get_size()
     else:
         comm, rank, nproc = None, 0, 1
 
@@ -221,7 +223,7 @@ if __name__ == '__main__':
         if not torch.cuda.is_available():
             raise Exception('User selected cuda option, but cuda is not available on this machine')
         gpu_count = torch.cuda.device_count()
-        torch.cuda.set_device(rank % gpu_count)
+        torch.cuda.set_device(0)
         print('Rank %d use GPU %d of %d GPUs on %s' %
               (rank, torch.cuda.current_device(), gpu_count, socket.gethostname()))
 
@@ -231,11 +233,13 @@ if __name__ == '__main__':
     try:
         args.xmin, args.xmax, args.xnum = [float(a) for a in args.x.split(':')]
         args.ymin, args.ymax, args.ynum = (None, None, None)
+        args.xnum = int(args.xnum)
         if args.y:
             args.ymin, args.ymax, args.ynum = [float(a) for a in args.y.split(':')]
+            args.ynum = int(args.ynum)
             assert args.ymin and args.ymax and args.ynum, \
             'You specified some arguments for the y axis, but not all'
-    except:
+    except Exception as e:
         raise Exception('Improper format for x- or y-coordinates. Try something like -1:1:51')
 
     #--------------------------------------------------------------------------
@@ -260,7 +264,7 @@ if __name__ == '__main__':
         setup_surface_file(args, surf_file, dir_file)
 
     # wait until master has setup the direction file and surface file
-    mpi.barrier(comm)
+    # mpi.barrier(comm)
 
     # load directions
     d = net_plotter.load_directions(dir_file)
@@ -276,7 +280,7 @@ if __name__ == '__main__':
     if rank == 0 and args.dataset == 'cifar10':
         torchvision.datasets.CIFAR10(root=args.dataset + '/data', train=True, download=True)
 
-    mpi.barrier(comm)
+    # mpi.barrier(comm)
 
     trainloader, testloader = dataloader.load_dataset(args.dataset, args.datapath,
                                 args.batch_size, args.threads, args.raw_data,
@@ -286,7 +290,20 @@ if __name__ == '__main__':
     #--------------------------------------------------------------------------
     # Start the computation
     #--------------------------------------------------------------------------
-    crunch(surf_file, net, w, s, d, trainloader, 'train_loss', 'train_acc', comm, rank, args)
+    if args.test:
+        crunch(surf_file, net, w, s, d, testloader, 'test_loss', 'test_acc', comm, rank, args)
+                #--------------------------------------------------------------------------
+        # Plot figures
+        #--------------------------------------------------------------------------
+        if args.plot and rank == 0:
+            if args.y and args.proj_file:
+                plot_2D.plot_contour_trajectory(surf_file, dir_file, args.proj_file, 'test_loss', args.show)
+            elif args.y:
+                plot_2D.plot_2d_contour(surf_file, 'test_loss', args.vmin, args.vmax, args.vlevel, args.show)
+            else:
+                plot_1D.plot_1d_loss_err(surf_file, args.xmin, args.xmax, args.loss_max, args.log, args.show)
+    else:
+        crunch(surf_file, net, w, s, d, trainloader, 'train_loss', 'train_acc', comm, rank, args)
     # crunch(surf_file, net, w, s, d, testloader, 'test_loss', 'test_acc', comm, rank, args)
 
     #--------------------------------------------------------------------------
