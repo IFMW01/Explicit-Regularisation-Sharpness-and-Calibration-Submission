@@ -7,6 +7,8 @@ import cifar10.models.densenet as densenet
 # map between model name and function
 models = {
     'vgg9'                  : vgg.VGG9,
+    'vgg16'                  : vgg.VGG16,
+    'vgg19'                  : vgg.VGG19,
     'densenet121'           : densenet.DenseNet121,
     'resnet18'              : resnet.ResNet18,
     'resnet18_noshort'      : resnet.ResNet18_noshort,
