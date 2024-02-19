@@ -24,7 +24,7 @@ def options_parser():
 
 def main():
     args = options_parser()
-    model_created = CM(args.baseline,args.adversarial,args.model_type,args.aug,args.dropout,args.early_stopping,args.dataset,args.save_name,args.save_directory)
+    model_created = CM.CreateModels(args.baseline,args.adversarial,args.model_type,args.aug,args.dropout,args.early_stopping,args.dataset,args.save_name,args.save_directory)
     model_created.set_seeds()
     device = model_created.device()
     model = model_created.VGG()
