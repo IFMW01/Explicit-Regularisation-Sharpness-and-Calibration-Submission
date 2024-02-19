@@ -7,7 +7,7 @@ from torch.optim import SGD
 
 def options_parser():
     parser = argparse.ArgumentParser(description="Arguments for creating model")
-    parser.add_argument('--baseline',default=True, type = bool, help='Is this the baseline model: True is yes, False is no.')
+    parser.add_argument('--baseline',default=False, type = bool, help='Is this the baseline model: True is yes, False is no.')
     parser.add_argument('--adversarial',default=False, type = bool, help='Is this the adversarial model: True is yes, False is no.')
     parser.add_argument('--model_type',required=True, type = str, help='Type of Model: i.e. "VGG9","VGG16" or "VGG19"')
     parser.add_argument('--aug',default=False,type = bool, help='Are you using augmentation: True is yes, False is no')
