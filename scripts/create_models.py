@@ -190,7 +190,6 @@ def train(self,model,loss_fn,optimizer,trainloader,testloader,device):
       model.train()
       ece_train = MulticlassCalibrationError(num_classes=10,n_bins=15,norm='l1').to(device)
       running_loss = 0
-      running_test_loss = 0
       for batch, (X, y) in enumerate(trainloader):
           optimizer.zero_grad()
           X = X.to(device)
