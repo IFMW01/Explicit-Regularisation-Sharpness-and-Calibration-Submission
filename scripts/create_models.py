@@ -289,6 +289,7 @@ class CreateModels:
                     break
         print('Finished Training')
         self.save_model(best_model)
+        print('Best model saved, see: ' +str(self.save_directory+'/'+ self.save_name))
 
     
 
