@@ -12,7 +12,6 @@ def options_parser():
     parser.add_argument('--model_type',required=True, type = str, help='Type of Model: i.e. "VGG9","VGG16" or "VGG19"')
     parser.add_argument('--aug',default=False,type = bool, help='Are you using augmentation: True is yes, LEAVE BLANK FOR NO')
     parser.add_argument('--dropout',default=0.0, type = float, help='Amount of dropout to be applied: 0.05,0.1,0.15')
-    parser.add_argument('--early_stopping',default=False, type = bool, help='Are you using early stopping: True is yes, LEAVE BLANK FOR NO')
     parser.add_argument('--dataset',required=True, type = str, help='CIFAR10 or CIFAR100')
     parser.add_argument('--save_name',required=True, type = str, help='Name of the model you are creating ending in .pth')
     parser.add_argument('--save_directory',required=True, type = str, help='Name of directory to save the model to')
@@ -24,7 +23,7 @@ def options_parser():
 
 def main():
     args = options_parser()
-    model_created = CM.CreateModels(args.baseline,args.adversarial,args.model_type,args.aug,args.dropout,args.early_stopping,args.dataset,args.save_name,args.save_directory)
+    model_created = CM.CreateModels(args.baseline,args.adversarial,args.model_type,args.aug,args.dropout,args.dataset,args.save_name,args.save_directory)
     model_created.set_seeds()
     device = model_created.device()
     model = model_created.VGG()
