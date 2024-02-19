@@ -27,8 +27,11 @@ class CreateModels:
         self.patience = 10
         self.save_name = save_name # Path to save model
         self.save_directory= save_directory # Path to directory to save
-        
-    def __main__(self):
+
+    if __name__ == "__main__":
+      main()
+
+    def main(self):
         self.set_seeds()
         device = self.device()
         model = self.VGG()
@@ -42,10 +45,10 @@ class CreateModels:
                 print('Initialisation saved, see: ' +str(self.save_directory)+ '/initialisation_base.pth')
         else:
             if self.adversarial == True:
-                baseline_path = self.save_directory + 'initailisation.pth'
+                baseline_path = './'+self.save_directory + '/initialisation_adversarial.pth'
                 self.epochs = 40
             else:
-                baseline_path = self.save_directory + 'initailisation.pth'
+                baseline_path = './'+self.save_directory + '/initialisation_base.pth'
             model.load_state_dict(torch.load(baseline_path))
 
         loss_fn = nn.CrossEntropyLoss()
@@ -56,7 +59,7 @@ class CreateModels:
             self.train_early_stopping(model,loss_fn,optimizer,trainloader,testloader,device)
             
         else:
-            self.train(self,model,loss_fn,optimizer,trainloader,testloader,device)
+            self.train(model,loss_fn,optimizer,trainloader,testloader,device)
 
 
     def set_seeds(self,seed=42):
@@ -286,6 +289,8 @@ class CreateModels:
                     break
         print('Finished Training')
         self.save_model(best_model)
+
+    
 
 
 
