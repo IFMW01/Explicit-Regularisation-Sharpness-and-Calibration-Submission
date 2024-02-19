@@ -8,6 +8,7 @@ from torchvision.transforms import v2
 from torchmetrics.classification import MulticlassCalibrationError
 from torch.optim import SGD
 import random
+import copy
 
 
 import cifar10_random_lables as CIFAR10random
@@ -239,7 +240,7 @@ class CreateModels:
                 )
             if val_acc > best_acc:
                 best_acc = val_acc
-                best_model = model
+                best_model = copy.deepcopy(model)
                 best_epoch = epoch
 
         print('Finished Training')
