@@ -14,13 +14,12 @@ import VGG
 import VGG_dropout
 
 class CreateModels:
-    def __init__(self,baseline: bool, adversarial:bool, model_type:str , aug:bool ,dropout: bool, dropout_amount:int ,early_stopping:bool ,dataset:str,save_name:str,save_directory:str):
+    def __init__(self,baseline: bool, adversarial:bool, model_type:str , aug:bool ,dropout: float, early_stopping:bool ,dataset:str,save_name:str,save_directory:str):
         self.model_type = model_type #"VGG9", "VGG16", "VGG19"
         self.baseline = baseline
         self.adversarial = adversarial 
         self.aug = aug 
         self.dropout = dropout 
-        self.dropout_amount = dropout_amount 
         self.early_stopping  = early_stopping 
         self.dataset = dataset # "CIFAR100" 
         self.batch_size = 256
@@ -144,8 +143,8 @@ class CreateModels:
 
     
     def VGG(self):
-        if self.dropout == True:
-            return VGG_dropout(str(self.model_type))
+        if self.dropout > 0:
+            return VGG_dropout(str(self.model_type),dropout)
         else:
             return VGG(str(self.model_type))
 
