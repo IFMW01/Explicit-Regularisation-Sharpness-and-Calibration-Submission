@@ -113,36 +113,36 @@ class CreateModels:
             testset = datasets.CIFAR10(root='./data', train=False,
                                        download=True, transform=transformations)
             testloader = torch.utils.data.DataLoader(testset, batch_size=self.batch_size,
-                                         shuffle=False, num_workers=2,worker_init_fn=seed_worker,generator=g)
+                                         shuffle=False, num_workers=2,worker_init_fn=self.seed_worker,generator=g)
     
             # For adversarial we need a different training loader
             if self.adversarial == True:
                 randomtrainset = CIFAR10random(1.0,root='./data',download=True,transform=transformations,train=True)
                 trainloader = torch.utils.data.DataLoader(randomtrainset, batch_size=self.batch_size,
-                                            shuffle=True, num_workers=2,worker_init_fn=seed_worker,generator=g)
+                                            shuffle=True, num_workers=2,worker_init_fn=self.seed_worker,generator=g)
             else:
                 trainset = datasets.CIFAR10(root='./data', train=True,
                                                         download=True, transform=transformations)
                 trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.batch_size,
-                                                        shuffle=True, num_workers=2,worker_init_fn=seed_worker,generator=g)
+                                                        shuffle=True, num_workers=2,worker_init_fn=self.seed_worker,generator=g)
             return trainloader,testloader
         
         elif self.dataset == "CIFAR100":
             testset = datasets.CIFAR100(root='./data', train=False,
                                        download=True, transform=transformations)
             testloader = torch.utils.data.DataLoader(testset, batch_size=self.batch_size,
-                                         shuffle=False, num_workers=2,worker_init_fn=seed_worker,generator=g)
+                                         shuffle=False, num_workers=2,worker_init_fn=self.seed_worker,generator=g)
             
             # For adversarial we need a different training loader
             if self.adversarial == True:
                 randomtrainset = CIFAR100random(1.0,root='./data',download=True,transform=transformations,train=True)
                 trainloader = torch.utils.data.DataLoader(randomtrainset, batch_size=self.batch_size,
-                                            shuffle=True, num_workers=2,worker_init_fn=seed_worker,generator=g)
+                                            shuffle=True, num_workers=2,worker_init_fn=self.seed_worker,generator=g)
             else:
                 trainset = datasets.CIFAR100(root='./data', train=True,
                                                         download=True, transform=transformations)
                 trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.batch_size,
-                                                        shuffle=True, num_workers=2,worker_init_fn=seed_worker,generator=g)
+                                                        shuffle=True, num_workers=2,worker_init_fn=self.seed_worker,generator=g)
             return trainloader,testloader
         
         
