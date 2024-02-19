@@ -7,12 +7,12 @@ from torch.optim import SGD
 
 def options_parser():
     parser = argparse.ArgumentParser(description="Arguments for creating model")
-    parser.add_argument('--baseline',default=False, type = bool, help='Is this the baseline model: True is yes, False is no.')
-    parser.add_argument('--adversarial',default=False, type = bool, help='Is this the adversarial model: True is yes, False is no.')
+    parser.add_argument('--baseline',default=False, type = bool, help='Is this the baseline model: True is yes, LEAVE BLANK FOR NO.')
+    parser.add_argument('--adversarial',default=False, type = bool, help='Is this the adversarial model: True is yes, LEAVE BLANK FOR NO.')
     parser.add_argument('--model_type',required=True, type = str, help='Type of Model: i.e. "VGG9","VGG16" or "VGG19"')
-    parser.add_argument('--aug',default=False,type = bool, help='Are you using augmentation: True is yes, False is no')
+    parser.add_argument('--aug',default=False,type = bool, help='Are you using augmentation: True is yes, LEAVE BLANK FOR NO')
     parser.add_argument('--dropout',default=0.0, type = float, help='Amount of dropout to be applied: 0.05,0.1,0.15')
-    parser.add_argument('--early_stopping',default=False, type = bool, help='Are you using early stopping: True is yes, False is no')
+    parser.add_argument('--early_stopping',default=False, type = bool, help='Are you using early stopping: True is yes, LEAVE BLANK FOR NO')
     parser.add_argument('--dataset',required=True, type = str, help='CIFAR10 or CIFAR100')
     parser.add_argument('--save_name',required=True, type = str, help='Name of the model you are creating ending in .pth')
     parser.add_argument('--save_directory',required=True, type = str, help='Name of directory to save the model to')
