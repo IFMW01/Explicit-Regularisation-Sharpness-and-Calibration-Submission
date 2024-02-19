@@ -23,7 +23,6 @@ def options_parser():
     return args
 
 
-
 def main():
     args = options_parser()
     model_created = CM(args.baseline,args.adversarial,args.model_type,args.aug,args.dropout,args.dropout_amount,args.early_stopping,args.dataset,args.save_name,args.save_directory)
@@ -52,3 +51,7 @@ def main():
         
     else:
         model_created.train(model,loss_fn,optimizer,trainloader,testloader,device)
+
+
+if __name__ == "__main__":
+    main()
