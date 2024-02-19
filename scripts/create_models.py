@@ -80,7 +80,7 @@ class CreateModels:
         [transforms.ToTensor()])
         return transform
     
-    def seed_worker(worker_id):
+    def seed_worker(self,worker_id):
         worker_seed = torch.initial_seed() % 2**32
         np.random.seed(worker_seed)
         random.seed(worker_seed)
