@@ -148,137 +148,137 @@ class CreateModels:
         else:
             return VGG.VGG(str(self.model_type))
 
-# TRAINING 
-def save_model(self,model):
-    if os.path.isdir(self.save_directory) ==False:
-        os.mkdir(self.save_directory)
-    torch.save(model.state_dict(),str(self.save_directory+'/'+ self.save_name))
+    # TRAINING 
+    def save_model(self,model):
+        if os.path.isdir(self.save_directory) ==False:
+            os.mkdir(self.save_directory)
+        torch.save(model.state_dict(),str(self.save_directory+'/'+ self.save_name))
 
 
-def evaluate_model(self,model,testloader,loss_fn,device,epoch=None):
-    size_test = int(np.ceil(len(testloader.dataset)//testloader.batch_size))
-    model.to(device)
-    model.eval() # Stop any weight updates on the model (i.e. Batch weights)
-    running_test_loss = 0
-    ece_test = MulticlassCalibrationError(num_classes=10,n_bins=15,norm='l1').to(device)
-    for test_batch, (X_val, y_val) in enumerate(testloader):
-      x_val = X_val.to(device)
-      y_val = y_val.to(device)
-      with torch.no_grad():
-        val_pred = model(x_val)
-        val_loss = loss_fn(val_pred, y_val)
-        running_test_loss += val_loss.item()
-        val_acc = np.mean(
-            (torch.argmax(val_pred, dim=-1) == y_val).detach().cpu().numpy()
-        )
-        ece_test.update(val_pred,y_val)
-    print(
-        "-"*10, "TEST ACC", "-"*10,
-        f"val loss: {running_test_loss/len(testloader):>5f}, val accuracy: {val_acc:.4f} "
-        f"Test ECE: {ece_test.compute().detach().cpu().item():>5f} "
-        )
-    if epoch!= None:
-          print(f"[epoch {epoch} and batch {test_batch}/{size_test}]",
-          "-"*10,"TEST ACC","-"*10)
-
-def train(self,model,loss_fn,optimizer,trainloader,testloader,device):
-  size_train = int(np.ceil(len(trainloader.dataset)//trainloader.batch_size))
-  model.to(device)
-  step = 0
-  for epoch in range(1, self.epochs + 1):
-      model.train()
-      ece_train = MulticlassCalibrationError(num_classes=10,n_bins=15,norm='l1').to(device)
-      running_loss = 0
-      for batch, (X, y) in enumerate(trainloader):
-          optimizer.zero_grad()
-          X = X.to(device)
-          y = y.to(device)
-          # Compute prediction and loss
-          pred = model(X)
-          loss = loss_fn(pred, y)
-          # Backpropagation
-          loss.backward()
-          optimizer.step()
-          running_loss += loss.item()
-          acc = np.mean(
-              (torch.argmax(pred, dim=-1) == y).detach().cpu().numpy()
-          )
-          ece_train.update(pred,y)
-      print(
-          f"loss: {running_loss/len(trainloader):>7f}, train accuracy: {acc:.5f} "
-          f"Train ECE: {ece_train.compute().detach().cpu().item():>5f} "
-          f"[epoch {epoch} and batch {batch}/{size_train} (step {step})]"
-      )
-      if epoch % 10==0:
-        self.evaluate_model(model,testloader,loss_fn,device,epoch=epoch)
-
-  print('Finished Training')
-  self.save_model(model)
-
-def train_early_stopping(self,model,loss_fn,optimizer,trainloader,testloader,device):
-  size_train = int(np.ceil(len(trainloader.dataset)//trainloader.batch_size))
-  size_test = int(np.ceil(len(testloader.dataset)//testloader.batch_size))
-  model.to(device)
-  step = 0
-  best_acc = 0
-  for epoch in range(1, self.epochs + 1):
-      model.train()
-      ece_train = MulticlassCalibrationError(num_classes=10,n_bins=15,norm='l1').to(device)
-      running_loss = 0
-      running_test_loss = 0
-      for batch, (X, y) in enumerate(trainloader):
-          optimizer.zero_grad()
-          X = X.to(device)
-          y = y.to(device)
-          # Compute prediction and loss
-          pred = model(X)
-          loss = loss_fn(pred, y)
-          # Backpropagation
-          loss.backward()
-          optimizer.step()
-          running_loss += loss.item()
-          acc = np.mean(
-              (torch.argmax(pred, dim=-1) == y).detach().cpu().numpy()
-          )
-          ece_train.update(pred,y)
-      print(
-          f"loss: {running_loss/len(trainloader):>7f}, train accuracy: {acc:.5f} "
-          f"Train ECE: {ece_train.compute().detach().cpu().item():>5f} "
-          f"[epoch {epoch} and batch {batch}/{size_train} (step {step})]"
-      )
-
-      model.eval() # Stop any weight updates on the model (i.e. Batch weights)
-      ece_test = MulticlassCalibrationError(num_classes=10,n_bins=15,norm='l1').to(device)
-      for test_batch, (X_val, y_val) in enumerate(testloader):
+    def evaluate_model(self,model,testloader,loss_fn,device,epoch=None):
+        size_test = int(np.ceil(len(testloader.dataset)//testloader.batch_size))
+        model.to(device)
+        model.eval() # Stop any weight updates on the model (i.e. Batch weights)
+        running_test_loss = 0
+        ece_test = MulticlassCalibrationError(num_classes=10,n_bins=15,norm='l1').to(device)
+        for test_batch, (X_val, y_val) in enumerate(testloader):
         x_val = X_val.to(device)
         y_val = y_val.to(device)
         with torch.no_grad():
-          val_pred = model(x_val)
-          val_loss = loss_fn(val_pred, y_val)
-          running_test_loss += val_loss.item()
-          val_acc = np.mean(
-              (torch.argmax(val_pred, dim=-1) == y_val).detach().cpu().numpy()
-          )
-          ece_test.update(val_pred,y_val)
-      print(
-          "-"*10, "TEST ACC", "-"*10,
-          f"val loss: {running_test_loss/len(testloader):>5f}, val accuracy: {val_acc:.4f} "
-          f"Test ECE: {ece_test.compute().detach().cpu().item():>5f} "
-          f"[epoch {epoch} and batch {batch}/{size_test}]",
-          "-"*10,"TEST ACC","-"*10,
-          )
-      if val_acc > best_acc:
-          best_acc = val_acc
-          best_model = model
-          consecutive_no_improvement = 0
-      else:
-          consecutive_no_improvement += 1
-          if consecutive_no_improvement >= self.patience:
-              print(f'Early stopping after {self.patience} consecutive epochs without improvement.')
-              break
+            val_pred = model(x_val)
+            val_loss = loss_fn(val_pred, y_val)
+            running_test_loss += val_loss.item()
+            val_acc = np.mean(
+                (torch.argmax(val_pred, dim=-1) == y_val).detach().cpu().numpy()
+            )
+            ece_test.update(val_pred,y_val)
+        print(
+            "-"*10, "TEST ACC", "-"*10,
+            f"val loss: {running_test_loss/len(testloader):>5f}, val accuracy: {val_acc:.4f} "
+            f"Test ECE: {ece_test.compute().detach().cpu().item():>5f} "
+            )
+        if epoch!= None:
+            print(f"[epoch {epoch} and batch {test_batch}/{size_test}]",
+            "-"*10,"TEST ACC","-"*10)
 
-  print('Finished Training')
-  self.save_model(best_model)
+    def train(self,model,loss_fn,optimizer,trainloader,testloader,device):
+    size_train = int(np.ceil(len(trainloader.dataset)//trainloader.batch_size))
+    model.to(device)
+    step = 0
+    for epoch in range(1, self.epochs + 1):
+        model.train()
+        ece_train = MulticlassCalibrationError(num_classes=10,n_bins=15,norm='l1').to(device)
+        running_loss = 0
+        for batch, (X, y) in enumerate(trainloader):
+            optimizer.zero_grad()
+            X = X.to(device)
+            y = y.to(device)
+            # Compute prediction and loss
+            pred = model(X)
+            loss = loss_fn(pred, y)
+            # Backpropagation
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()
+            acc = np.mean(
+                (torch.argmax(pred, dim=-1) == y).detach().cpu().numpy()
+            )
+            ece_train.update(pred,y)
+        print(
+            f"loss: {running_loss/len(trainloader):>7f}, train accuracy: {acc:.5f} "
+            f"Train ECE: {ece_train.compute().detach().cpu().item():>5f} "
+            f"[epoch {epoch} and batch {batch}/{size_train} (step {step})]"
+        )
+        if epoch % 10==0:
+            self.evaluate_model(model,testloader,loss_fn,device,epoch=epoch)
+
+    print('Finished Training')
+    self.save_model(model)
+
+    def train_early_stopping(self,model,loss_fn,optimizer,trainloader,testloader,device):
+    size_train = int(np.ceil(len(trainloader.dataset)//trainloader.batch_size))
+    size_test = int(np.ceil(len(testloader.dataset)//testloader.batch_size))
+    model.to(device)
+    step = 0
+    best_acc = 0
+    for epoch in range(1, self.epochs + 1):
+        model.train()
+        ece_train = MulticlassCalibrationError(num_classes=10,n_bins=15,norm='l1').to(device)
+        running_loss = 0
+        running_test_loss = 0
+        for batch, (X, y) in enumerate(trainloader):
+            optimizer.zero_grad()
+            X = X.to(device)
+            y = y.to(device)
+            # Compute prediction and loss
+            pred = model(X)
+            loss = loss_fn(pred, y)
+            # Backpropagation
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()
+            acc = np.mean(
+                (torch.argmax(pred, dim=-1) == y).detach().cpu().numpy()
+            )
+            ece_train.update(pred,y)
+        print(
+            f"loss: {running_loss/len(trainloader):>7f}, train accuracy: {acc:.5f} "
+            f"Train ECE: {ece_train.compute().detach().cpu().item():>5f} "
+            f"[epoch {epoch} and batch {batch}/{size_train} (step {step})]"
+        )
+
+        model.eval() # Stop any weight updates on the model (i.e. Batch weights)
+        ece_test = MulticlassCalibrationError(num_classes=10,n_bins=15,norm='l1').to(device)
+        for test_batch, (X_val, y_val) in enumerate(testloader):
+            x_val = X_val.to(device)
+            y_val = y_val.to(device)
+            with torch.no_grad():
+            val_pred = model(x_val)
+            val_loss = loss_fn(val_pred, y_val)
+            running_test_loss += val_loss.item()
+            val_acc = np.mean(
+                (torch.argmax(val_pred, dim=-1) == y_val).detach().cpu().numpy()
+            )
+            ece_test.update(val_pred,y_val)
+        print(
+            "-"*10, "TEST ACC", "-"*10,
+            f"val loss: {running_test_loss/len(testloader):>5f}, val accuracy: {val_acc:.4f} "
+            f"Test ECE: {ece_test.compute().detach().cpu().item():>5f} "
+            f"[epoch {epoch} and batch {batch}/{size_test}]",
+            "-"*10,"TEST ACC","-"*10,
+            )
+        if val_acc > best_acc:
+            best_acc = val_acc
+            best_model = model
+            consecutive_no_improvement = 0
+        else:
+            consecutive_no_improvement += 1
+            if consecutive_no_improvement >= self.patience:
+                print(f'Early stopping after {self.patience} consecutive epochs without improvement.')
+                break
+
+    print('Finished Training')
+    self.save_model(best_model)
 
 
 
