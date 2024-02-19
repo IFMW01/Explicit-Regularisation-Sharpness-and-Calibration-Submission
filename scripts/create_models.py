@@ -72,7 +72,6 @@ class CreateModels:
         torch.manual_seed(seed)
         np.random.seed(seed)
         random.seed(seed)
-        torch.use_deterministic_algorithms(True)
 
     
     def base_transformations(self):
