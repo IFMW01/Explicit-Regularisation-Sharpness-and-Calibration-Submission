@@ -30,10 +30,8 @@ def main():
     model = model_created.VGG()
     if model_created.baseline ==True:
         if model_created.adversarial == True:
-            model_created.save(model, 'initialisation_adversarial.pth')
             model_created.epochs = 40
-        else:
-            model_created.save_model(model, 'initailisation.pth')
+        model_created.save_model(model)
     else:
         if model_created.adversarial == True:
             baseline_path = model_created.save_directory + '/initailisation.pth'

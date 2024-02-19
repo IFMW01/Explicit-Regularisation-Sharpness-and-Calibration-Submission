@@ -144,9 +144,9 @@ class CreateModels:
     
     def VGG(self):
         if self.dropout > 0:
-            return VGG_dropout(str(self.model_type),dropout)
+            return VGG.VGG_dropout(str(self.model_type),dropout)
         else:
-            return VGG(str(self.model_type))
+            return VGG.VGG(str(self.model_type))
 
 # TRAINING 
 def save_model(self,model):
