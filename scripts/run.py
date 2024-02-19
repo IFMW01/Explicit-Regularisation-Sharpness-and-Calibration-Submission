@@ -31,23 +31,9 @@ def main():
     if model_created.baseline ==True:
         if model_created.adversarial == True:
             model_created.epochs = 40
-        model_created.save_model(model)
     else:
-        if model_created.adversarial == True:
-            baseline_path = model_created.save_directory + '/initailisation.pth'
-        else:
-            baseline_path = model_created.save_directory + '/initailisation.pth'
-        model.load_state_dict(torch.load(baseline_path))
-
-    loss_fn = nn.CrossEntropyLoss()
-    optimizer = SGD(model.parameters(), lr=0.001, momentum=0.9)
-
-    trainloader,testloader = model_created.dataloaders()
-    if model_created.early_stopping == True:
-        model_created.train_early_stopping(model,loss_fn,optimizer,trainloader,testloader,device)
-        
-    else:
-        model_created.train(model,loss_fn,optimizer,trainloader,testloader,device)
+      model_created.epochs = 20
+    model_created.main()
 
 
 if __name__ == "__main__":
