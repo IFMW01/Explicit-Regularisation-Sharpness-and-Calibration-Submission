@@ -227,7 +227,7 @@ def relative_flatness(model,dataloader):
 
     feature_layer, feature_layer_idx = get_feature_layer(model)
 
-    _, activation = model(x_train,return_feat=True)[1].data.cpu().numpy()
+    activation = model(x_train,return_feat=True)[1].data.cpu().numpy()
     activation = np.squeeze(activation)
     sigma = np.std(activation, axis=0)
 
@@ -267,8 +267,10 @@ def all_sharpness_measures(model,dataloader):
     print("hessian_trace:", res["hessian_trace"])
     res["fisher_rao_norm"] = fisher_rao_norm(model,dataloader)
     print("fisher_rao_norm:", res["fisher_rao_norm"])
-    res["pacbayes_flatness"] = pacbayes_flatness(model,dataloader)
-    print("pacbayes_flatness:", res["pacbayes_flatness"])
+    
+    #res["pacbayes_flatness"] = pacbayes_flatness(model,dataloader)
+    #print("pacbayes_flatness:", res["pacbayes_flatness"])
+    
     res["relative_flatness"] = relative_flatness(model,dataloader)
     print("relative_flatness:", res["relative_flatness"])
 
