@@ -253,30 +253,29 @@ class CreateModels:
                 x_val = X_val.to(device)
                 y_val = y_val.to(device)
                 with torch.no_grad():
-                val_pred = model(x_val)
-                val_loss = loss_fn(val_pred, y_val)
-                running_test_loss += val_loss.item()
-                val_acc = np.mean(
-                    (torch.argmax(val_pred, dim=-1) == y_val).detach().cpu().numpy()
-                )
-                ece_test.update(val_pred,y_val)
-            print(
-                "-"*10, "TEST ACC", "-"*10,
-                f"val loss: {running_test_loss/len(testloader):>5f}, val accuracy: {val_acc:.4f} "
-                f"Test ECE: {ece_test.compute().detach().cpu().item():>5f} "
-                f"[epoch {epoch} and batch {batch}/{size_test}]",
-                "-"*10,"TEST ACC","-"*10,
-                )
-            if val_acc > best_acc:
-                best_acc = val_acc
-                best_model = model
-                consecutive_no_improvement = 0
-            else:
-                consecutive_no_improvement += 1
-                if consecutive_no_improvement >= self.patience:
-                    print(f'Early stopping after {self.patience} consecutive epochs without improvement.')
-                    break
-
+                    val_pred = model(x_val)
+                    val_loss = loss_fn(val_pred, y_val)
+                    running_test_loss += val_loss.item()
+                    val_acc = np.mean(
+                        (torch.argmax(val_pred, dim=-1) == y_val).detach().cpu().numpy()
+                    )
+                    ece_test.update(val_pred,y_val)
+                    print(
+                        "-"*10, "TEST ACC", "-"*10,
+                        f"val loss: {running_test_loss/len(testloader):>5f}, val accuracy: {val_acc:.4f} "
+                        f"Test ECE: {ece_test.compute().detach().cpu().item():>5f} "
+                        f"[epoch {epoch} and batch {batch}/{size_test}]",
+                        "-"*10,"TEST ACC","-"*10,
+                        )
+                    if val_acc > best_acc:
+                        best_acc = val_acc
+                        best_model = model
+                        consecutive_no_improvement = 0
+                    else:
+                        consecutive_no_improvement += 1
+                        if consecutive_no_improvement >= self.patience:
+                            print(f'Early stopping after {self.patience} consecutive epochs without improvement.')
+                            break
         print('Finished Training')
         self.save_model(best_model)
 
