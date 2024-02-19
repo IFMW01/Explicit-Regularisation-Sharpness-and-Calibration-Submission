@@ -156,7 +156,7 @@ def save_model(self,model):
     torch.save(model.state_dict(),str(self.save_directory+'/'+ self.save_name))
 
 
-def evaluate_model(self,model,testloader,epoch=None,loss_fn,device):
+def evaluate_model(self,model,testloader,loss_fn,device,epoch=None):
     size_test = int(np.ceil(len(testloader.dataset)//testloader.batch_size))
     model.to(device)
     model.eval() # Stop any weight updates on the model (i.e. Batch weights)
@@ -211,7 +211,7 @@ def train(self,model,loss_fn,optimizer,trainloader,testloader,device):
           f"[epoch {epoch} and batch {batch}/{size_train} (step {step})]"
       )
       if epoch % 10==0:
-        self.evaluate_model(model,testloader,epoch=epoch,loss_fn,device)
+        self.evaluate_model(model,testloader,loss_fn,device,epoch=epoch)
 
   print('Finished Training')
   self.save_model(model)
