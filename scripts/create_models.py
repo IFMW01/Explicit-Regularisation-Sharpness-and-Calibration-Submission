@@ -278,7 +278,7 @@ class CreateModels:
                 f"[epoch {epoch} and batch {batch}/{size_test}]",
                 "-"*10,"TEST ACC","-"*10,
                 )
-            if val_acc >= best_acc:
+            if val_acc > best_acc:
                 best_acc = val_acc
                 best_model = model
                 consecutive_no_improvement = 0
