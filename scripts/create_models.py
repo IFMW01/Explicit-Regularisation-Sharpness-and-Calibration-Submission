@@ -34,10 +34,12 @@ class CreateModels:
         model = self.VGG()
         if self.baseline ==True:
             if self.adversarial == True:
-                save_model(model, 'initialisation_adversarial.pth')
+                self.save_innit(model, 'initialisation_adversarial.pth')
+                print('Initialisation saved, see: ' +str(self.save_directory)+ '/initialisation_adversarial.pth')
                 self.epochs = 40
             else:
-                save_model(model, 'initailisation.pth')
+                self.save_innit(model, 'initialisation_base.pth')
+                print('Initialisation saved, see: ' +str(self.save_directory)+ '/initialisation_base.pth')
         else:
             if self.adversarial == True:
                 baseline_path = self.save_directory + 'initailisation.pth'
@@ -130,6 +132,11 @@ class CreateModels:
         if os.path.isdir(self.save_directory) ==False:
             os.mkdir(self.save_directory)
         torch.save(model.state_dict(),str(self.save_directory+'/'+ self.save_name))
+    
+    def save_innit(self,model,path):
+        if os.path.isdir(self.save_directory) ==False:
+            os.mkdir(self.save_directory)
+        torch.save(model.state_dict(),str(self.save_directory+'/'+ path))
 
     
     def device(self):
@@ -144,7 +151,7 @@ class CreateModels:
     
     def VGG(self):
         if self.dropout > 0:
-            return VGG_dropout.VGG_dropout(str(self.model_type),dropout)
+            return VGG_dropout.VGGDropout(str(self.model_type),self.dropout)
         else:
             return VGG.VGG(str(self.model_type))
 
@@ -182,38 +189,39 @@ class CreateModels:
             "-"*10,"TEST ACC","-"*10)
 
     def train(self,model,loss_fn,optimizer,trainloader,testloader,device):
-            size_train = int(np.ceil(len(trainloader.dataset)//trainloader.batch_size))
-            model.to(device)
-            step = 0
-            for epoch in range(1, self.epochs + 1):
-                model.train()
-                ece_train = MulticlassCalibrationError(num_classes=10,n_bins=15,norm='l1').to(device)
-                running_loss = 0
-                for batch, (X, y) in enumerate(trainloader):
-                    optimizer.zero_grad()
-                    X = X.to(device)
-                    y = y.to(device)
-                    # Compute prediction and loss
-                    pred = model(X)
-                    loss = loss_fn(pred, y)
-                    # Backpropagation
-                    loss.backward()
-                    optimizer.step()
-                    running_loss += loss.item()
-                    acc = np.mean(
-                        (torch.argmax(pred, dim=-1) == y).detach().cpu().numpy()
-                    )
-                    ece_train.update(pred,y)
-                print(
-                    f"loss: {running_loss/len(trainloader):>7f}, train accuracy: {acc:.5f} "
-                    f"Train ECE: {ece_train.compute().detach().cpu().item():>5f} "
-                    f"[epoch {epoch} and batch {batch}/{size_train} (step {step})]"
+        size_train = int(np.ceil(len(trainloader.dataset)//trainloader.batch_size))
+        model.to(device)
+        step = 0
+        for epoch in range(1, self.epochs + 1):
+            model.train()
+            ece_train = MulticlassCalibrationError(num_classes=10,n_bins=15,norm='l1').to(device)
+            running_loss = 0
+            for batch, (X, y) in enumerate(trainloader):
+                optimizer.zero_grad()
+                X = X.to(device)
+                y = y.to(device)
+                # Compute prediction and loss
+                pred = model(X)
+                loss = loss_fn(pred, y)
+                # Backpropagation
+                loss.backward()
+                optimizer.step()
+                running_loss += loss.item()
+                acc = np.mean(
+                    (torch.argmax(pred, dim=-1) == y).detach().cpu().numpy()
                 )
-                if epoch % 10==0:
-                    self.evaluate_model(model,testloader,loss_fn,device,epoch=epoch)
+                ece_train.update(pred,y)
+            print(
+                f"loss: {running_loss/len(trainloader):>7f}, train accuracy: {acc:.5f} "
+                f"Train ECE: {ece_train.compute().detach().cpu().item():>5f} "
+                f"[epoch {epoch} and batch {batch}/{size_train} (step {step})]"
+            )
+            if epoch % 10==0:
+                self.evaluate_model(model,testloader,loss_fn,device,epoch=epoch)
 
-            print('Finished Training')
-            self.save_model(model)
+        print('Finished Training')
+        print('Model saved, see: ' +str(self.save_directory+'/'+ self.save_name))
+        self.save_model(model)
 
     def train_early_stopping(self,model,loss_fn,optimizer,trainloader,testloader,device):
         size_train = int(np.ceil(len(trainloader.dataset)//trainloader.batch_size))
