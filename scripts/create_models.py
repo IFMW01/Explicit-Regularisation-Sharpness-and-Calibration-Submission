@@ -149,6 +149,7 @@ class CreateModels:
     def save_model(self,model):
         if os.path.isdir(self.save_directory) ==False:
             os.mkdir(self.save_directory)
+        
         torch.save(model.state_dict(),str(self.save_directory+'/'+ self.save_name))
     
     def save_innit(self,model,path):
@@ -178,6 +179,11 @@ class CreateModels:
         if os.path.isdir(self.save_directory) ==False:
             os.mkdir(self.save_directory)
         torch.save(model.state_dict(),str(self.save_directory+'/'+ self.save_name))
+    
+    def save_best_model(self,model):
+        if os.path.isdir(self.save_directory) ==False:
+            os.mkdir(self.save_directory)
+        torch.save(model.state_dict(),str(self.save_directory+'/best_model_'+ self.save_name))
 
     def train_with_early_stopping(self,model,loss_fn,optimizer,trainloader,testloader,device):
         size_train = int(np.ceil(len(trainloader.dataset)//trainloader.batch_size))
@@ -238,7 +244,7 @@ class CreateModels:
                 best_epoch = epoch
 
         print('Finished Training')
-        self.save_model(best_model)
+        self.save_best_model(best_model)
         print('Best model occured at: ' +str(best_epoch) + ' Test ACC: ' +str(best_acc) + ', saved at: ' +str(self.save_directory+'/best_'+ self.save_name))
         self.save_model(model)
         print('Final model saved, see: ' +str(self.save_directory+ self.save_name))
