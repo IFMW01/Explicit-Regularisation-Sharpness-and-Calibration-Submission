@@ -24,12 +24,12 @@ class DataLoaderManager:
             self.dataset = datasets.CIFAR10
             self.num_classes = 10
             self.policy = transforms.AutoAugmentPolicy.CIFAR10
-        # elif dataset_name == "CIFAR100":
-        #     self.dataset = datasets.CIFAR100
-        #     self.num_classes = 100
-        #     self.policy = transforms.AutoAugmentPolicy.CIFAR100 # TODO: Implement CIFAR100
+        elif dataset_name == "CIFAR100":
+            self.dataset = datasets.CIFAR100
+            self.num_classes = 100
+            self.policy = transforms.AutoAugmentPolicy.CIFAR10
         else:
-            raise ValueError("Only CIFAR10 supported")
+            raise ValueError("Only CIFAR10 and CIFAR100 supported")
 
         self.seed = seed
 
