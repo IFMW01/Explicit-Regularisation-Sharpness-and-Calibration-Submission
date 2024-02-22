@@ -1,0 +1,29 @@
+# Training parameters
+seed: 42
+batch_size: 256
+learning_rate: 0.001
+momentum: 0.9
+num_epochs: 30
+
+# Model configuration
+models_dir: ../models
+vgg_config: vgg_config.json  
+
+# Metrics
+metrics:
+  - squared_euclidean_norm
+  - max_hessian_eigenvalue
+  - hessian_trace
+  - fisher_rao_norm
+  - pacbayes_flatness
+  - relative_flatness
+
+# Other directories
+config_dir: ../configs
+
+cifar_dir: ../data/cifar
+
+wandb:
+  experiment_name: 'igor'
+  project: 'Build table'
+  entity: 'r252_project'
