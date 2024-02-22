@@ -22,12 +22,12 @@ class VGG(nn.Module):
 
     def forward(self, x, return_feat=False):
         out = self.features(x)
-        if return_feat:
-            return out.squeeze()
         out = out.view(out.size(0), -1)
         if self.dropout is not None:
             out = self.dropout(out)
-        out = self.fc(out)
+        features = self.fc(out)
+        if return_feat:
+            return features.squeeze()
         out = self.classifier(out)
         return out
 
