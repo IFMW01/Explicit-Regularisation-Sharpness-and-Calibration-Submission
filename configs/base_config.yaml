@@ -15,8 +15,8 @@ metrics:
   - max_hessian_eigenvalue
   - hessian_trace
   - fisher_rao_norm
-  - pacbayes_flatness
   - relative_flatness
+#  - pacbayes_flatness
 
 # Other directories
 config_dir: ../configs
@@ -27,3 +27,7 @@ wandb:
   experiment_name: 'igor'
   project: 'Build table'
   entity: 'r252_project'
+
+# Sharpness calculation
+sharpness_dataset_size: 10000
+sharpness_batch_size: 256
