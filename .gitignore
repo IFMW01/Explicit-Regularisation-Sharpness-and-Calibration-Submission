@@ -7,3 +7,11 @@ cifar10/plots/*.png
 cifar10/plots/*.h5
 cifar10/data/
 cifar10/trained_nets/
+models/
+data/
+r252-env/
+R252 CIFAR10 vgg19/
+slurm/
+src/wandb/
+*.sh
+OLD/
