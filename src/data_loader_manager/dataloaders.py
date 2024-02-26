@@ -86,7 +86,16 @@ class DataLoaderManager:
             worker_init_fn=self.seed_worker,
             generator=g,
         )
-        return train_dataloader, eval_dataloader
+
+        sharpness_dataloader = torch.utils.data.DataLoader(
+            torch.utils.data.Subset(train_dataset, list(range(0,self.config.sharpness_dataset_size))),
+            batch_size=self.config.sharpness_batch_size,
+            shuffle=True,
+            num_workers=2,
+            worker_init_fn=self.seed_worker,
+            generator=g,
+        )
+        return train_dataloader, eval_dataloader, sharpness_dataloader
 
     def base_transformations(self):
         transform = transforms.Compose([transforms.ToTensor()])

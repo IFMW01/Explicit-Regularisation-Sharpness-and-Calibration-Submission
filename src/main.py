@@ -138,7 +138,7 @@ def main(seed=None, run_num=0):
         seed=seed,
     )
 
-    train_dataloader, eval_dataloader = data_loader_manager.get_dataloaders()
+    train_dataloader, eval_dataloader, sharpness_dataloader = data_loader_manager.get_dataloaders()
 
     if args.baseline:
         print("Random initialisation")
@@ -193,7 +193,7 @@ def main(seed=None, run_num=0):
     mp = metrics_processor.MetricsProcessor(
         config=config,
         model=trainer.model,
-        dataloader=eval_dataloader,
+        dataloader=sharpness_dataloader,
         device=device,
         seed=seed,
     )

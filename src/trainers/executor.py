@@ -5,11 +5,10 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn as nn
+import wandb
 from torch.optim import SGD
 from torchmetrics.classification import MulticlassCalibrationError
 from tqdm import tqdm
-
-import wandb
 
 
 class Executor:
@@ -54,8 +53,9 @@ class Executor:
             self.model.parameters(),
             lr=self.config.learning_rate,
             momentum=self.config.momentum,
+            weight_decay = self.config.weight_decay
         )
-
+     
         best_acc = 0
         best_epoch = 0
 

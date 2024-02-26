@@ -7,3 +7,4 @@ matplotlib
 seaborn
 easydict
 wandb
+pyhessian

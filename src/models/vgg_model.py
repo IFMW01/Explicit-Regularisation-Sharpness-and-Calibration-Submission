@@ -26,9 +26,9 @@ class VGG(nn.Module):
         if self.dropout is not None:
             out = self.dropout(out)
         features = self.fc(out)
+        out = self.classifier(features)
         if return_feat:
-            return features.squeeze()
-        out = self.classifier(out)
+            return out, features.squeeze()
         return out
 
     def _make_fc_layers(self):

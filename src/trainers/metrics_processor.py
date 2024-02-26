@@ -9,7 +9,9 @@ import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 from numpy import linalg as LA
 from torch.autograd import Variable, grad
+from tqdm import tqdm
 
+from pyhessian import hessian
 
 class MetricsProcessor:
 
@@ -20,6 +22,9 @@ class MetricsProcessor:
         self.device = device
         self.seed = seed
 
+        self.cache_max_hessian_eigenvalue = None
+        self.cache_hessian_trace = None
+
     def compute_metrics(self):
         """
         Compute metrics
@@ -27,10 +32,12 @@ class MetricsProcessor:
 
         results_dict = {}
 
+        self.model.eval()
         for metric in self.config.metrics:
             compute_func = getattr(self, metric)
             print(f"Running metrics {str(metric)}...")
             results_dict["measures/" + metric] = compute_func()
+            self.model.zero_grad(set_to_none=True)
 
         return results_dict
 
@@ -125,29 +132,31 @@ class MetricsProcessor:
 
     # --------------------------------------------------------------------------
 
-    def calculate_loss_on_data(self, loss, x, y):
-        output = self.model(x)
-        loss_value = loss(output, y)
-        return output, np.sum(loss_value.data.cpu().numpy())
-
     def run_model(self):
-        element_loss = torch.nn.CrossEntropyLoss(reduction="none")
         avg_loss = torch.nn.CrossEntropyLoss()
 
-        # Igor changed... since from pytorch 1.13 this is the only working syntax
-        inputs, labels = next(iter(self.dataloader))
-        X = inputs.cuda()
-        y = labels.cuda()
-        train_size = len(X)
+        all_outputs = []
+        all_y = []
+        all_feat = []
 
-        train_output, train_loss_overall = self.calculate_loss_on_data(
-            element_loss, X, y
-        )
-        # print("Train loss calculated", train_loss_overall)
+        for inputs, labels in tqdm(self.dataloader):
+            inputs, labels = next(iter(self.dataloader))
+            X = inputs.cuda()
+            y = labels.cuda()
 
-        train_loss = avg_loss(train_output, y)
+            output,feat = self.model(X,return_feat=True)
 
-        return train_loss, train_output, y
+            all_outputs.append(output)
+            all_feat.append(feat)
+            all_y.append(y)
+
+        all_outputs = torch.cat(all_outputs)
+        all_feat = torch.cat(all_feat)
+        all_y = torch.cat(all_y)
+
+        train_loss = avg_loss(all_outputs, all_y)
+
+        return train_loss, all_outputs, all_feat, all_y
 
     def hessian_single_layer(self, layer, train_loss):
         # hessian calculation for the layer of interest
@@ -183,26 +192,51 @@ class MetricsProcessor:
         # print("Squared euclidian norm is calculated", weights_norm)
         return weights_norm
 
-    def max_hessian_eigenvalue(self, hessian=None):
+    def max_hessian_eigenvalue_slow(self, hessian=None):
         if hessian is None:
             layer, _ = self.get_feature_layer()
-            train_loss, _, _ = self.run_model()
+            train_loss, _, _, _ = self.run_model()
             hessian = self.hessian_single_layer(layer, train_loss)
 
         max_eignv = LA.eigvalsh(hessian)[-1]
         return max_eignv
 
-    def hessian_trace(self, hessian=None):
+    def hessian_trace_slow(self, hessian=None):
         if hessian is None:
             layer, _ = self.get_feature_layer()
-            train_loss, _, _ = self.run_model()
+            train_loss, _, _, _ = self.run_model()
             hessian = self.hessian_single_layer(layer, train_loss)
 
         trace = np.trace(hessian)
         return trace
+    
+    def calc_hessian_metrics(self):
+        if self.cache_max_hessian_eigenvalue is not None:
+            return
+
+        hessian_comp = hessian(self.model,
+                           torch.nn.CrossEntropyLoss(),
+                           dataloader=self.dataloader,
+                           cuda=True)
+
+        top_eigenvalues, _ = hessian_comp.eigenvalues(maxIter=20,tol=0.01)
+        trace = hessian_comp.trace(maxIter=20,tol=0.01)
+
+        self.cache_max_hessian_eigenvalue = top_eigenvalues[0]
+        self.cache_hessian_trace = np.mean(trace)
+
+    def max_hessian_eigenvalue(self):
+        self.calc_hessian_metrics()
+        return self.cache_max_hessian_eigenvalue
+
+    def hessian_trace(self):
+        self.calc_hessian_metrics()
+        return self.cache_hessian_trace
+    
 
     def fisher_rao_norm(self):
-        train_loss, train_output, labels = self.run_model()
+        with torch.no_grad():
+            train_loss, train_output, activation, labels = self.run_model()
         ## calculate FisherRao norm
         # analytical formula for crossentropy loss from Appendix of the original paper
         sum_derivatives = 0
@@ -223,7 +257,7 @@ class MetricsProcessor:
     def pacbayes_flatness(self):
         # adapted from https://github.com/nitarshan/robust-generalization-measures/blob/master/data/generation/measures.py
 
-        train_loss, train_output, labels = self.run_model()
+        train_loss, train_output, activation, labels = self.run_model()
         train_acc = (train_output.argmax(dim=1) == labels).float().mean()
         train_size = len(labels)
 
@@ -251,7 +285,7 @@ class MetricsProcessor:
         drv2 = Variable(
             torch.empty(shape[1], shape[0], shape[0], shape[1]), requires_grad=True
         ).cuda()
-        for ind, n_grd in enumerate(layer_jacobian[0].T):
+        for ind, n_grd in enumerate(tqdm(layer_jacobian[0].T)):
             for neuron_j in range(shape[0]):
                 drv2[ind][neuron_j] = grad(
                     n_grd[neuron_j].cuda(), feature_layer, retain_graph=True
@@ -286,16 +320,12 @@ class MetricsProcessor:
         return trace_neuron_measure, maxeigen_neuron_measure
 
     def relative_flatness(self):
-        train_loss, train_output, labels = self.run_model()
-
-        # Igor changed... since from pytorch 1.13 this is the only working syntax
-        inputs, labels = next(iter(self.dataloader))
-        x_train = inputs.cuda()
-        y_train = labels.cuda()
+        with torch.no_grad():
+            train_loss, train_output, activation, labels = self.run_model()
 
         feature_layer, feature_layer_idx = self.get_feature_layer()
 
-        activation = self.model(x_train, return_feat=True).detach().cpu().numpy()
+        activation = activation.detach().cpu().numpy()
 
         activation = np.squeeze(activation)
         sigma = np.std(activation, axis=0)
@@ -312,17 +342,27 @@ class MetricsProcessor:
                 feature_layer = p
             j += 1
 
-        element_loss = torch.nn.CrossEntropyLoss(reduction="none")
+        #train_loss, _, _, _ = self.run_model()
+
+        trace_nm = 0
+
         avg_loss = torch.nn.CrossEntropyLoss()
 
-        train_output, train_loss_overall = self.calculate_loss_on_data(
-            element_loss, x_train, y_train
-        )
-        train_loss = avg_loss(train_output, y_train)
+        for inputs, labels in tqdm(self.dataloader):
+            inputs, labels = next(iter(self.dataloader))
+            X = inputs.cuda()
+            y = labels.cuda()
 
-        trace_nm, maxeigen_nm = self.calculateNeuronwiseHessians_fc_layer(
-            feature_layer, train_loss, None, normalize=False
-        )
+            train_loss = avg_loss(self.model(X),y)
+
+            curr_trace_nm, curr_maxeigen_nm = self.calculateNeuronwiseHessians_fc_layer(
+                feature_layer, train_loss, None, normalize=False
+            )
+
+            trace_nm += curr_trace_nm
+
+            self.model.zero_grad(set_to_none=True)
+
         return trace_nm
 
         # print("Neuronwise tracial measure is", trace_nm)

@@ -3,7 +3,8 @@ seed: 42
 batch_size: 256
 learning_rate: 0.001
 momentum: 0.9
-num_epochs: 30
+num_epochs: 20 # Number of epochs should be 20 for base training and 40 for the adversairal baseline
+weight_decay: 0 # Use values between 0 and 0.1 i.e. try 0.01, 0.05 and 0.1 and then take the best reult to present
 
 # Model configuration
 models_dir: ../models
@@ -15,8 +16,8 @@ metrics:
   - max_hessian_eigenvalue
   - hessian_trace
   - fisher_rao_norm
-  - pacbayes_flatness
   - relative_flatness
+#  - pacbayes_flatness
 
 # Other directories
 config_dir: ../configs
@@ -27,3 +28,7 @@ wandb:
   experiment_name: 'igor'
   project: 'Build table'
   entity: 'r252_project'
+
+# Sharpness calculation
+sharpness_dataset_size: 10000
+sharpness_batch_size: 256
