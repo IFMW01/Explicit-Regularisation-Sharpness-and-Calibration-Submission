@@ -8,19 +8,20 @@ import torch
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 from numpy import linalg as LA
+from pyhessian import hessian
 from torch.autograd import Variable, grad
 from tqdm import tqdm
 
-from pyhessian import hessian
 
 class MetricsProcessor:
 
-    def __init__(self, config, model, dataloader, device, seed) -> None:
+    def __init__(self, config, model, dataloader, device, seed, early_stopping) -> None:
         self.config = config
         self.model = model
         self.dataloader = dataloader
         self.device = device
         self.seed = seed
+        self.early_stopping = early_stopping
 
         self.cache_max_hessian_eigenvalue = None
         self.cache_hessian_trace = None
@@ -36,7 +37,11 @@ class MetricsProcessor:
         for metric in self.config.metrics:
             compute_func = getattr(self, metric)
             print(f"Running metrics {str(metric)}...")
-            results_dict["measures/" + metric] = compute_func()
+            if self.early_stopping:
+                metric_name = "measures_early_stopping/" + metric
+            else:
+                metric_name = "measures/" + metric
+            results_dict[metric_name] = compute_func()
             self.model.zero_grad(set_to_none=True)
 
         return results_dict
@@ -67,7 +72,8 @@ class MetricsProcessor:
             ]
         else:
             noise = [
-                torch.normal(0, sigma**2, p.shape, generator=rng).to(self.device)
+                torch.normal(0, sigma**2, p.shape,
+                             generator=rng).to(self.device)
                 for p in self.model.parameters()
             ]
         model = deepcopy(self.model)
@@ -141,10 +147,10 @@ class MetricsProcessor:
 
         for inputs, labels in tqdm(self.dataloader):
             inputs, labels = next(iter(self.dataloader))
-            X = inputs.cuda()
-            y = labels.cuda()
+            X = inputs.to(self.device)
+            y = labels.to(self.device)
 
-            output,feat = self.model(X,return_feat=True)
+            output, feat = self.model(X, return_feat=True)
 
             all_outputs.append(output)
             all_feat.append(feat)
@@ -209,18 +215,18 @@ class MetricsProcessor:
 
         trace = np.trace(hessian)
         return trace
-    
+
     def calc_hessian_metrics(self):
         if self.cache_max_hessian_eigenvalue is not None:
             return
 
         hessian_comp = hessian(self.model,
-                           torch.nn.CrossEntropyLoss(),
-                           dataloader=self.dataloader,
-                           cuda=True)
+                               torch.nn.CrossEntropyLoss(),
+                               dataloader=self.dataloader,
+                               cuda=True)
 
-        top_eigenvalues, _ = hessian_comp.eigenvalues(maxIter=20,tol=0.01)
-        trace = hessian_comp.trace(maxIter=20,tol=0.01)
+        top_eigenvalues, _ = hessian_comp.eigenvalues(maxIter=20, tol=0.01)
+        trace = hessian_comp.trace(maxIter=20, tol=0.01)
 
         self.cache_max_hessian_eigenvalue = top_eigenvalues[0]
         self.cache_hessian_trace = np.mean(trace)
@@ -232,12 +238,11 @@ class MetricsProcessor:
     def hessian_trace(self):
         self.calc_hessian_metrics()
         return self.cache_hessian_trace
-    
 
     def fisher_rao_norm(self):
         with torch.no_grad():
             train_loss, train_output, activation, labels = self.run_model()
-        ## calculate FisherRao norm
+        # calculate FisherRao norm
         # analytical formula for crossentropy loss from Appendix of the original paper
         sum_derivatives = 0
         m = torch.nn.Softmax(dim=0)
@@ -284,12 +289,12 @@ class MetricsProcessor:
         layer_jacobian_out = layer_jacobian[0]
         drv2 = Variable(
             torch.empty(shape[1], shape[0], shape[0], shape[1]), requires_grad=True
-        ).cuda()
-        for ind, n_grd in enumerate(tqdm(layer_jacobian[0].T)):
+        ).to(self.device)
+        for ind, n_grd in enumerate(layer_jacobian[0].T):
             for neuron_j in range(shape[0]):
                 drv2[ind][neuron_j] = grad(
-                    n_grd[neuron_j].cuda(), feature_layer, retain_graph=True
-                )[0].cuda()
+                    n_grd[neuron_j].to(self.device), feature_layer, retain_graph=True
+                )[0].to(self.device)
         # print("got hessian")
 
         trace_neuron_measure = 0.0
@@ -297,24 +302,29 @@ class MetricsProcessor:
         for neuron_i in range(shape[0]):
             neuron_i_weights = feature_layer[neuron_i, :].data.cpu().numpy()
             for neuron_j in range(shape[0]):
-                neuron_j_weights = feature_layer[neuron_j, :].data.cpu().numpy()
+                neuron_j_weights = feature_layer[neuron_j, :].data.cpu(
+                ).numpy()
                 hessian = drv2[:, neuron_j, neuron_i, :]
                 trace = np.trace(hessian.data.cpu().numpy())
                 if normalize:
                     trace /= 1.0 * hessian.shape[0]
-                trace_neuron_measure += neuron_i_weights.dot(neuron_j_weights) * trace
+                trace_neuron_measure += neuron_i_weights.dot(
+                    neuron_j_weights) * trace
                 if neuron_j == neuron_i:
                     eigenvalues = LA.eigvalsh(hessian.data.cpu().numpy())
                     maxeigen_neuron_measure += (
-                        neuron_i_weights.dot(neuron_j_weights) * eigenvalues[-1]
+                        neuron_i_weights.dot(
+                            neuron_j_weights) * eigenvalues[-1]
                     )
                     # adding regularization term
                     if alpha:
                         trace_neuron_measure += (
-                            neuron_i_weights.dot(neuron_j_weights) * 2.0 * alpha
+                            neuron_i_weights.dot(
+                                neuron_j_weights) * 2.0 * alpha
                         )
                         maxeigen_neuron_measure += (
-                            neuron_i_weights.dot(neuron_j_weights) * 2.0 * alpha
+                            neuron_i_weights.dot(
+                                neuron_j_weights) * 2.0 * alpha
                         )
 
         return trace_neuron_measure, maxeigen_neuron_measure
@@ -342,7 +352,7 @@ class MetricsProcessor:
                 feature_layer = p
             j += 1
 
-        #train_loss, _, _, _ = self.run_model()
+        # train_loss, _, _, _ = self.run_model()
 
         trace_nm = 0
 
@@ -350,10 +360,10 @@ class MetricsProcessor:
 
         for inputs, labels in tqdm(self.dataloader):
             inputs, labels = next(iter(self.dataloader))
-            X = inputs.cuda()
-            y = labels.cuda()
+            X = inputs.to(self.device)
+            y = labels.to(self.device)
 
-            train_loss = avg_loss(self.model(X),y)
+            train_loss = avg_loss(self.model(X), y)
 
             curr_trace_nm, curr_maxeigen_nm = self.calculateNeuronwiseHessians_fc_layer(
                 feature_layer, train_loss, None, normalize=False

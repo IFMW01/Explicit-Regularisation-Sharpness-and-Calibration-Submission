@@ -87,9 +87,21 @@ class DataLoaderManager:
             generator=g,
         )
 
+        if self.config.sharpness_dataset_size == -1:
+            sharpness_dataset = train_dataset
+        else:
+            sharpness_dataset = torch.utils.data.Subset(
+                train_dataset, list(range(0, self.config.sharpness_dataset_size)))
+
+        if self.config.sharpness_batch_size == -1:
+            print(len(sharpness_dataset))
+            sharpness_batch_size = len(sharpness_dataset)
+        else:
+            sharpness_batch_size = self.config.sharpness_batch_size
+
         sharpness_dataloader = torch.utils.data.DataLoader(
-            torch.utils.data.Subset(train_dataset, list(range(0,self.config.sharpness_dataset_size))),
-            batch_size=self.config.sharpness_batch_size,
+            sharpness_dataset,
+            batch_size=sharpness_batch_size,
             shuffle=True,
             num_workers=2,
             worker_init_fn=self.seed_worker,

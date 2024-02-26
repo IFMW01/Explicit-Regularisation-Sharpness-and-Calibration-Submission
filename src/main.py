@@ -1,4 +1,5 @@
 import argparse
+import os
 import random
 from pathlib import Path
 from pprint import pprint
@@ -16,7 +17,8 @@ import wandb
 
 
 def options_parser():
-    parser = argparse.ArgumentParser(description="Arguments for creating model")
+    parser = argparse.ArgumentParser(
+        description="Arguments for creating model")
     parser.add_argument(
         "--baseline",
         default=False,
@@ -47,6 +49,13 @@ def options_parser():
         type=float,
         help="Amount of dropout to be applied e.g. 0.05,0.1,0.15",
     )
+    parser.add_argument(
+        "--weight_decay",
+        default=0.0,
+        type=float,
+        help="Use values between 0 and 0.1 i.e. try 0.01, 0.05 and 0.1 and then take the best reult to present"
+    )
+
     parser.add_argument(
         "--dataset", required=True, type=str, help="CIFAR10 or CIFAR100"
     )
@@ -104,7 +113,8 @@ def main(seed=None, run_num=0):
     else:
         config.models_dir = config.models_dir / "baseline"
     config.models_dir = (
-        config.models_dir / args.dataset / args.model_name / args.save_name / str(seed)
+        config.models_dir / args.dataset /
+        args.model_name / args.save_name / str(seed)
     )
 
     config.config_dir = Path(config.config_dir)
@@ -113,6 +123,8 @@ def main(seed=None, run_num=0):
 
     set_seeds(seed)
     device = get_device()
+
+    print("Loading model")
 
     if config.model_name.startswith("VGG"):
         model = vgg_model.VGG(
@@ -129,28 +141,13 @@ def main(seed=None, run_num=0):
         seed=seed,
     )
 
-    trainer = executor.Executor(
-        config=config,
-        model=model,
-        device=device,
-        num_classes=data_loader_manager.num_classes,
-        save_name=args.save_name,
-        seed=seed,
-    )
+    print("Loading dataloaders")
 
-    train_dataloader, eval_dataloader, sharpness_dataloader = data_loader_manager.get_dataloaders()
-
-    if args.baseline:
-        print("Random initialisation")
-        trainer.save_model(model, save_file_name="initialisation")
-    elif args.adversarial:
-        print("Adversarial initialisation")
-        adversarial_initialization = f"../models/adversarial/CIFAR10/VGG19/adversarial_initialization/{seed}/adversarial_initialization.pth"
-        model.load_state_dict(
-            torch.load(adversarial_initialization),
-        )
-    else:
-        raise Exception("Approach not specified")
+    (
+        train_dataloader,
+        eval_dataloader,
+        sharpness_dataloader,
+    ) = data_loader_manager.get_dataloaders()
 
     if args.baseline and args.adversarial:
         approach = "baseline-adversarial"
@@ -173,34 +170,72 @@ def main(seed=None, run_num=0):
         entity=config.wandb.entity,
         config=config,
         group=config.wandb.experiment_name
-        + f"-{args.model_name}-{args.dataset}-{approach}-with-{reg_method}",
+        + f"-{args.model_name}-{args.dataset}-{approach}-with-{reg_method}-v2",
     )
     wandb.run.name = (
         config["wandb"]["experiment_name"]
-        + f"-{args.model_name}-{args.dataset}-{approach}-with-{reg_method}-seed-{seed}"
+        + f"-{args.model_name}-{args.dataset}-{approach}-with-{reg_method}-seed-{seed}-v2"
     )
 
-    wandb.define_metric("train/loss", summary="min")
-    wandb.define_metric("train/acc", summary="max")
-    wandb.define_metric("train/ECE", summary="max")
+    if not os.path.isfile(f"{config.models_dir}/best_{config.save_name}.pth"):
 
-    wandb.define_metric("eval/loss", summary="min")
-    wandb.define_metric("eval/acc", summary="max")
-    wandb.define_metric("eval/ECE", summary="max")
+        print(
+            f"Loading executor with model from: {config.models_dir}/best_{config.save_name}.pth")
 
-    trainer.train_eval_loop(train_dataloader, eval_dataloader)
+        trainer = executor.Executor(
+            config=config,
+            model=model,
+            device=device,
+            num_classes=data_loader_manager.num_classes,
+            save_name=args.save_name,
+            seed=seed,
+        )
+        if args.baseline:
+            print("Random initialisation")
+            trainer.save_model(model, save_file_name="initialisation")
+        elif args.adversarial:
+            print("Adversarial initialisation")
+            adversarial_initialization = f"../models/adversarial/CIFAR10/VGG19/adversarial_initialization/{seed}/adversarial_initialization.pth"
+            model.load_state_dict(
+                torch.load(adversarial_initialization),
+            )
+        else:
+            raise Exception("Approach not specified")
 
-    mp = metrics_processor.MetricsProcessor(
-        config=config,
-        model=trainer.model,
-        dataloader=sharpness_dataloader,
-        device=device,
-        seed=seed,
-    )
+        wandb.define_metric("train/loss", summary="min")
+        wandb.define_metric("train/acc", summary="max")
+        wandb.define_metric("train/ECE", summary="max")
 
-    results = mp.compute_metrics()
+        wandb.define_metric("eval/loss", summary="min")
+        wandb.define_metric("eval/acc", summary="max")
+        wandb.define_metric("eval/ECE", summary="max")
 
-    wandb.log(results)
+        trainer.train_eval_loop(train_dataloader, eval_dataloader)
+
+    for early_stopping in [True, False]:
+        print("Computing sharpness metrics for early stopping:", early_stopping)
+
+        if early_stopping:
+            model.load_state_dict(
+                torch.load(f"{config.models_dir}/best_{config.save_name}.pth"),
+            )
+        else:
+            model.load_state_dict(
+                torch.load(f"{config.models_dir}/{config.save_name}.pth"),
+            )
+
+        mp = metrics_processor.MetricsProcessor(
+            config=config,
+            model=model,
+            dataloader=sharpness_dataloader,
+            device=device,
+            seed=seed,
+            early_stopping=early_stopping,
+        )
+
+        results = mp.compute_metrics()
+
+        wandb.log(results)
 
     wandb.finish()
 
