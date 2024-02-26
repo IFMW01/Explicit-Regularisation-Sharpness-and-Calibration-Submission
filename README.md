@@ -48,9 +48,18 @@ python main.py \
     --aug True \
     --dataset CIFAR10  \
     --save_name baseline_augmentations 
+
+python main.py \
+    --config_file ../configs/base_config.yaml \
+    --model_name VGG19 \
+    --baseline True \
+    --weight_decay 0.05 \
+    --dataset CIFAR10  \
+    --save_name baseline_weight_decay_0_05
 ```
 
 ### Adversarial iniialization
+
 ```
 python main.py \
     --config_file ../configs/base_config.yaml \
@@ -59,7 +68,9 @@ python main.py \
     --adversarial True \
     --dataset CIFAR10  \
     --save_name adversarial_initialization 
+```
 
+```
 python main.py \
     --config_file ../configs/base_config.yaml \
     --model_name VGG19 \
@@ -82,6 +93,14 @@ python main.py \
     --aug True \
     --dataset CIFAR10  \
     --save_name adversarial_augmentations 
+
+python main.py \
+    --config_file ../configs/base_config.yaml \
+    --model_name VGG19 \
+    --adversarial True \
+    --weight_decay 0.05 \
+    --dataset CIFAR10  \
+    --save_name adversarial_weight_decay_0_05
 ```
 
 
