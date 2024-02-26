@@ -58,7 +58,7 @@ python main.py \
     --save_name baseline_weight_decay_0_05
 ```
 
-### Adversarial iniialization
+### Adversarial initialization
 
 ```
 python main.py \
