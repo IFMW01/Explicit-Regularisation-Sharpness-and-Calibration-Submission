@@ -13,3 +13,6 @@ r252-env/*
 slurm/*
 
 test.ipynb
+OLD/*
+src/wandb/*
+*.sh
