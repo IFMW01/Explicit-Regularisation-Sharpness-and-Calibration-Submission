@@ -13,6 +13,7 @@ from torch.autograd import Variable, grad
 from tqdm import tqdm
 
 
+
 class MetricsProcessor:
 
     def __init__(self, config, model, dataloader, device, seed, early_stopping) -> None:
@@ -146,7 +147,6 @@ class MetricsProcessor:
         all_feat = []
 
         for inputs, labels in tqdm(self.dataloader):
-            inputs, labels = next(iter(self.dataloader))
             X = inputs.to(self.device)
             y = labels.to(self.device)
 
@@ -359,7 +359,6 @@ class MetricsProcessor:
         avg_loss = torch.nn.CrossEntropyLoss()
 
         for inputs, labels in tqdm(self.dataloader):
-            inputs, labels = next(iter(self.dataloader))
             X = inputs.to(self.device)
             y = labels.to(self.device)
 
