@@ -37,14 +37,6 @@ python main.py \
     --config_file ../configs/base_config.yaml \
     --model_name VGG19 \
     --baseline True \
-    --dropout 0.1 \
-    --dataset CIFAR10  \
-    --save_name baseline_dropout_0_1 
-
-python main.py \
-    --config_file ../configs/base_config.yaml \
-    --model_name VGG19 \
-    --baseline True \
     --aug True \
     --dataset CIFAR10  \
     --save_name baseline_augmentations 
@@ -53,13 +45,46 @@ python main.py \
     --config_file ../configs/base_config.yaml \
     --model_name VGG19 \
     --baseline True \
+    --dropout 0.1 \
+    --dataset CIFAR10  \
+    --save_name baseline_dropout_0_1 
+
+python main.py \
+    --config_file ../configs/base_config.yaml \
+    --model_name VGG19 \
+    --baseline True \
+    --dropout 0.5 \
+    --dataset CIFAR10  \
+    --save_name baseline_dropout_0_5
+
+python main.py \
+    --config_file ../configs/base_config.yaml \
+    --model_name VGG19 \
+    --baseline True \
     --weight_decay 0.05 \
     --dataset CIFAR10  \
     --save_name baseline_weight_decay_0_05
+
+python main.py \
+    --config_file ../configs/base_config.yaml \
+    --model_name VGG19 \
+    --baseline True \
+    --weight_decay 0.1 \
+    --dataset CIFAR10  \
+    --save_name baseline_weight_decay_0_1
+
+python main.py \
+    --config_file ../configs/base_config.yaml \
+    --model_name VGG19 \
+    --baseline True \
+    --weight_decay 0.15 \
+    --dataset CIFAR10  \
+    --save_name baseline_weight_decay_0_15
 ```
 
 ### Adversarial initialization
 
+#### Find the adversarial initialisation
 ```
 python main.py \
     --config_file ../configs/base_config.yaml \
@@ -70,6 +95,7 @@ python main.py \
     --save_name adversarial_initialization 
 ```
 
+##### Train models from there
 ```
 python main.py \
     --config_file ../configs/base_config.yaml \
@@ -77,14 +103,6 @@ python main.py \
     --adversarial True \
     --dataset CIFAR10  \
     --save_name adversarial_baseline 
-
-python main.py \
-    --config_file ../configs/base_config.yaml \
-    --model_name VGG19 \
-    --adversarial True \
-    --dropout 0.1 \
-    --dataset CIFAR10  \
-    --save_name adversarial_dropout_0_1 
 
 python main.py \
     --config_file ../configs/base_config.yaml \
@@ -98,9 +116,41 @@ python main.py \
     --config_file ../configs/base_config.yaml \
     --model_name VGG19 \
     --adversarial True \
+    --dropout 0.1 \
+    --dataset CIFAR10  \
+    --save_name adversarial_dropout_0_1 
+
+python main.py \
+    --config_file ../configs/base_config.yaml \
+    --model_name VGG19 \
+    --adversarial True \
+    --dropout 0.5 \
+    --dataset CIFAR10  \
+    --save_name adversarial_dropout_0_5 
+
+python main.py \
+    --config_file ../configs/base_config.yaml \
+    --model_name VGG19 \
+    --adversarial True \
     --weight_decay 0.05 \
     --dataset CIFAR10  \
     --save_name adversarial_weight_decay_0_05
+
+python main.py \
+    --config_file ../configs/base_config.yaml \
+    --model_name VGG19 \
+    --adversarial True \
+    --weight_decay 0.1 \
+    --dataset CIFAR10  \
+    --save_name adversarial_weight_decay_0_1
+
+python main.py \
+    --config_file ../configs/base_config.yaml \
+    --model_name VGG19 \
+    --adversarial True \
+    --weight_decay 0.15 \
+    --dataset CIFAR10  \
+    --save_name adversarial_weight_decay_0_15
 ```
 
 

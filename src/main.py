@@ -119,7 +119,7 @@ def main(seed=None, run_num=0):
 
     config.config_dir = Path(config.config_dir)
 
-    seed = seed if seed is not None else config.seed
+    config.seed = seed if seed is not None else config.seed
 
     set_seeds(seed)
     device = get_device()
@@ -161,7 +161,9 @@ def main(seed=None, run_num=0):
     if args.aug:
         reg_method = "augmentation"
     elif args.dropout > 0.0:
-        reg_method = "dropout"
+        reg_method = "dropout_" + str(args.dropout)
+    elif args.weight_decay > 0.0:
+        reg_method = "weight_decay" + str(args.weight_decay)
     else:
         reg_method = "no-regularisation"
 

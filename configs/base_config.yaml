@@ -24,8 +24,8 @@ config_dir: ../configs
 cifar_dir: ../data/cifar
 
 wandb:
-  experiment_name: 'igor'
-  project: 'Build table'
+  experiment_name: 'YOUR EXPERIMENT NAME' # overwritten in main.py atm
+  project: 'YOUR PROJECT NAME'
   entity: 'r252_project'
 
 # Sharpness calculation
