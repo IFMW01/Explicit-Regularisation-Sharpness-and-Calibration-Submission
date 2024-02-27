@@ -12,6 +12,8 @@ from pyhessian import hessian
 from torch.autograd import Variable, grad
 from tqdm import tqdm
 
+from trainers.igs.igs import calculate_IGS_largemodel
+
 
 
 class MetricsProcessor:
@@ -376,6 +378,20 @@ class MetricsProcessor:
 
         # print("Neuronwise tracial measure is", trace_nm)
         # print("Neuronwise max eigenvalue measure is", maxeigen_nm)
+    
+    def IGS(self):
+        criterion = torch.nn.CrossEntropyLoss()
+        criterion_alldata = torch.nn.CrossEntropyLoss(reduction = 'none')
+        
+        IGS = []
+        for X,y in tqdm(self.dataloader):
+            X = X.cuda()
+            y = y.cuda()
+            #experiment_fast(model, False, X,y,criterion, criterion_alldata)
+            IGS_dims, L, V, spurious_dim = calculate_IGS_largemodel(self.model, X, X,y,criterion, 1e-3,20,exact_fisher=True)
+            IGS.append(IGS_dims[-1])
+            
+        return np.array(IGS).mean()
 
 
 # def all_sharpness_measures(dataloader):
