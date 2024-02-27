@@ -1,5 +1,5 @@
 # Training parameters
-seed: 42
+seed: 42 # overwritten in main.py 
 batch_size: 256
 learning_rate: 0.001
 momentum: 0.9
@@ -24,7 +24,7 @@ config_dir: ../configs
 cifar_dir: ../data/cifar
 
 wandb:
-  experiment_name: 'YOUR EXPERIMENT NAME' # overwritten in main.py atm
+  experiment_name: 'YOUR EXPERIMENT NAME' # overwritten in main.py
   project: 'YOUR PROJECT NAME'
   entity: 'r252_project'
 
