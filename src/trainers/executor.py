@@ -69,6 +69,8 @@ class Executor:
                 ).to(self.device)
                 running_loss = 0
 
+                train_accs = []
+
                 for X, y in train_dataloader:
                     y = y.to(self.device)
                     X = X.to(self.device)
@@ -78,7 +80,7 @@ class Executor:
                     running_loss += loss
 
                     comparison_with_gold = torch.argmax(pred, dim=-1) == y
-                    train_acc = np.mean(comparison_with_gold.detach().cpu().numpy())
+                    train_accs.append(np.mean(comparison_with_gold.detach().cpu().numpy()))
 
                     train_ece.update(pred, y)
 
@@ -86,6 +88,8 @@ class Executor:
                     num_classes=self.num_classes, n_bins=15, norm="l1"
                 ).to(self.device)
                 running_test_loss = 0
+
+                val_accs = []
 
                 for X_val, y_val in eval_dataloader:
                     X_val = X_val.to(self.device)
@@ -95,7 +99,7 @@ class Executor:
 
                     running_test_loss += val_loss
                     comparison_with_gold = torch.argmax(val_pred, dim=-1) == y_val
-                    val_acc = np.mean(comparison_with_gold.detach().cpu().numpy())
+                    val_accs.append(np.mean(comparison_with_gold.detach().cpu().numpy()))
                     ece_test.update(val_pred, y_val)
 
                 train_loss = running_loss / len(train_dataloader)
@@ -110,6 +114,9 @@ class Executor:
                     # val_ece=val_ece,
                     # val_acc=val_acc,
                 )
+
+                train_acc = np.mean(train_accs)
+                val_acc = np.mean(val_accs)
 
                 wandb.log(
                     {
