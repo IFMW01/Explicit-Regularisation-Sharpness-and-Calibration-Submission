@@ -69,8 +69,27 @@ class DataLoaderManager:
                 transform=transformations,
             )
 
-        eval_dataloader = torch.utils.data.DataLoader(
-            eval_dataset,
+        num_train = len(train_dataset)
+        indices = list(range(num_train))
+        split = num_train - 10000 
+        train_idx, dev_idx = indices[:split], indices[split:]
+
+        dev_dataset = torch.utils.data.Subset(
+            train_dataset, dev_idx)
+        train_dataset = torch.utils.data.Subset(
+            train_dataset, train_idx)
+
+        train_dataloader = torch.utils.data.DataLoader(
+            train_dataset,
+            batch_size=self.config.batch_size,
+            shuffle=True,
+            num_workers=2,
+            worker_init_fn=self.seed_worker,
+            generator=g,
+        )
+
+        dev_dataloader = torch.utils.data.DataLoader(
+            dev_dataset,
             batch_size=self.config.batch_size,
             shuffle=False,
             num_workers=2,
@@ -78,10 +97,10 @@ class DataLoaderManager:
             generator=g,
         )
 
-        train_dataloader = torch.utils.data.DataLoader(
-            train_dataset,
+        test_dataloader = torch.utils.data.DataLoader(
+            eval_dataset,
             batch_size=self.config.batch_size,
-            shuffle=True,
+            shuffle=False,
             num_workers=2,
             worker_init_fn=self.seed_worker,
             generator=g,
@@ -107,7 +126,7 @@ class DataLoaderManager:
             worker_init_fn=self.seed_worker,
             generator=g,
         )
-        return train_dataloader, eval_dataloader, sharpness_dataloader
+        return train_dataloader, dev_dataloader, test_dataloader, sharpness_dataloader
 
     def base_transformations(self):
         transform = transforms.Compose([transforms.ToTensor()])

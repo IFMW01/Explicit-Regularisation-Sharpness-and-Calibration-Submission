@@ -5,6 +5,7 @@ from pprint import pprint
 
 import numpy as np
 import torch
+import torch.nn as nn
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 from numpy import linalg as LA
@@ -12,19 +13,20 @@ from pyhessian import hessian
 from torch.autograd import Variable, grad
 from tqdm import tqdm
 
+from models.temperature_scaling import _ECELoss
 from trainers.igs.igs import calculate_IGS_largemodel
-
 
 
 class MetricsProcessor:
 
-    def __init__(self, config, model, dataloader, device, seed, early_stopping) -> None:
+    def __init__(self, config, model, train_dataloader, test_dataloader, device, seed, model_name) -> None:
         self.config = config
         self.model = model
-        self.dataloader = dataloader
+        self.train_dataloader = train_dataloader
+        self.test_dataloader = test_dataloader
         self.device = device
         self.seed = seed
-        self.early_stopping = early_stopping
+        self.model_name = model_name
 
         self.cache_max_hessian_eigenvalue = None
         self.cache_hessian_trace = None
@@ -40,10 +42,7 @@ class MetricsProcessor:
         for metric in self.config.metrics:
             compute_func = getattr(self, metric)
             print(f"Running metrics {str(metric)}...")
-            if self.early_stopping:
-                metric_name = "measures_early_stopping/" + metric
-            else:
-                metric_name = "measures/" + metric
+            metric_name = "eval_metrics_" + self.model_name + "/" + metric
             results_dict[metric_name] = compute_func()
             self.model.zero_grad(set_to_none=True)
 
@@ -115,7 +114,7 @@ class MetricsProcessor:
             for _ in range(montecarlo_samples):
                 with self.perturbed_model(sigma, rng, magnitude_eps) as p_model:
                     loss_estimate = 0
-                    for data, target in self.dataloader:
+                    for data, target in self.train_dataloader:
                         logits = p_model(data.to(self.device))
                         pred = logits.data.max(1, keepdim=True)[
                             1
@@ -126,7 +125,7 @@ class MetricsProcessor:
                             .cpu()
                         )
                         loss_estimate += batch_correct.sum()
-                    loss_estimate /= len(self.dataloader.dataset)
+                    loss_estimate /= len(self.train_dataloader.dataset)
                     accuracy_samples.append(loss_estimate)
             displacement = abs(np.mean(accuracy_samples) - accuracy)
             if abs(displacement - accuracy_displacement) < displacement_tolerance:
@@ -148,7 +147,7 @@ class MetricsProcessor:
         all_y = []
         all_feat = []
 
-        for inputs, labels in tqdm(self.dataloader):
+        for inputs, labels in tqdm(self.train_dataloader):
             X = inputs.to(self.device)
             y = labels.to(self.device)
 
@@ -224,7 +223,7 @@ class MetricsProcessor:
 
         hessian_comp = hessian(self.model,
                                torch.nn.CrossEntropyLoss(),
-                               dataloader=self.dataloader,
+                               dataloader=self.train_dataloader,
                                cuda=True)
 
         top_eigenvalues, _ = hessian_comp.eigenvalues(maxIter=20, tol=0.01)
@@ -360,7 +359,7 @@ class MetricsProcessor:
 
         avg_loss = torch.nn.CrossEntropyLoss()
 
-        for inputs, labels in tqdm(self.dataloader):
+        for inputs, labels in tqdm(self.train_dataloader):
             X = inputs.to(self.device)
             y = labels.to(self.device)
 
@@ -384,14 +383,49 @@ class MetricsProcessor:
         criterion_alldata = torch.nn.CrossEntropyLoss(reduction = 'none')
         
         IGS = []
-        for X,y in tqdm(self.dataloader):
-            X = X.cuda()
-            y = y.cuda()
+        for X,y in tqdm(self.train_dataloader):
+            X = X.to(self.device)
+            y = y.to(self.device)
             #experiment_fast(model, False, X,y,criterion, criterion_alldata)
             IGS_dims, L, V, spurious_dim = calculate_IGS_largemodel(self.model, X, X,y,criterion, 1e-3,20,exact_fisher=True)
             IGS.append(IGS_dims[-1])
             
         return np.array(IGS).mean()
+
+    @torch.no_grad()
+    def ece(self):
+        ece_criterion = _ECELoss().to(self.device)
+
+        logits_list = []
+        labels_list = []
+        for input, label in self.test_dataloader:
+            input = input.to(self.device)
+            logits = self.model(input)
+            logits_list.append(logits)
+            labels_list.append(label)
+
+        logits = torch.cat(logits_list).to(self.device)
+        labels = torch.cat(labels_list).to(self.device)
+
+        ece = ece_criterion(logits, labels).item()
+
+        return ece
+
+    @torch.no_grad()
+    def acc(self):
+        correct = 0
+        total = 0
+        for input, label in self.test_dataloader:
+            input = input.to(self.device)
+            label = label.to(self.device)
+            pred = self.model(input)
+            comparison_with_gold = torch.argmax(pred, dim=-1) == label
+            correct += comparison_with_gold.sum().item()
+            total += len(label)
+
+        acc = correct / total
+
+        return acc
 
 
 # def all_sharpness_measures(dataloader):

@@ -1,4 +1,5 @@
 import argparse
+import copy
 import os
 import random
 from pathlib import Path
@@ -11,14 +12,14 @@ from easydict import EasyDict
 
 import data_loader_manager.dataloaders as dataloaders
 import models.vgg_model as vgg_model
-import trainers.executor as executor
+import trainers.classification_executor as classification_executor
 import trainers.metrics_processor as metrics_processor
 import wandb
+from models.temperature_scaling import ModelWithTemperature
 
 
 def options_parser():
-    parser = argparse.ArgumentParser(
-        description="Arguments for creating model")
+    parser = argparse.ArgumentParser(description="Arguments for creating model")
     parser.add_argument(
         "--baseline",
         default=False,
@@ -53,7 +54,7 @@ def options_parser():
         "--weight_decay",
         default=0.0,
         type=float,
-        help="Use values between 0 and 0.1 i.e. try 0.01, 0.05 and 0.1 and then take the best reult to present"
+        help="Use values between 0 and 0.1 i.e. try 0.01, 0.05 and 0.1 and then take the best reult to present",
     )
 
     parser.add_argument(
@@ -77,11 +78,13 @@ def options_parser():
     return args
 
 
-def set_seeds(seed):
-    torch.manual_seed(seed)
-    np.random.seed(seed)
+def set_seed(seed):
     random.seed(seed)
-    return seed
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 def get_device():
@@ -93,6 +96,21 @@ def get_device():
     else:
         print("No CUDA devices found, using CPU")
         return "cpu"
+
+
+def save_model(model, save_file_name, save_dir):
+
+    if os.path.isdir(save_dir) == False:
+        os.makedirs(save_dir)
+
+    full_save_dir = save_dir / f"{save_file_name}.pth"
+    torch.save(
+        model.state_dict(),
+        full_save_dir,
+    )
+    print("-----------------")
+    print(f"Model saved at: {full_save_dir}")
+    print("-----------------")
 
 
 def main(seed=None, run_num=0):
@@ -113,15 +131,14 @@ def main(seed=None, run_num=0):
     else:
         config.models_dir = config.models_dir / "baseline"
     config.models_dir = (
-        config.models_dir / args.dataset /
-        args.model_name / args.save_name / str(seed)
+        config.models_dir / args.dataset / args.model_name / args.save_name / str(seed)
     )
 
     config.config_dir = Path(config.config_dir)
 
     config.seed = seed if seed is not None else config.seed
 
-    set_seeds(seed)
+    set_seed(seed)
     device = get_device()
 
     print("Loading model")
@@ -145,8 +162,9 @@ def main(seed=None, run_num=0):
 
     (
         train_dataloader,
-        eval_dataloader,
-        sharpness_dataloader,
+        dev_dataloader,
+        test_dataloader,
+        sharpness_train_dataloader,
     ) = data_loader_manager.get_dataloaders()
 
     if args.baseline and args.adversarial:
@@ -171,30 +189,26 @@ def main(seed=None, run_num=0):
         project=config.wandb.project,
         entity=config.wandb.entity,
         config=config,
-        group=config.wandb.experiment_name
-        + f"-{args.model_name}-{args.dataset}-{approach}-with-{reg_method}-v2",
+        group=f"{args.model_name}-{args.dataset}-{approach}-with-{reg_method}",
     )
-    wandb.run.name = (
-        config["wandb"]["experiment_name"]
-        + f"-{args.model_name}-{args.dataset}-{approach}-with-{reg_method}-seed-{seed}-v2"
+    wandb.run.name = (f"{args.model_name}-{args.dataset}-{approach}-with-{reg_method}-seed-{seed}"
     )
 
     if not os.path.isfile(f"{config.models_dir}/best_{config.save_name}.pth"):
-
         print(
-            f"Loading executor with model from: {config.models_dir}/best_{config.save_name}.pth")
+            f"Loading classification executor with model from: {config.models_dir}/best_{config.save_name}.pth"
+        )
 
-        trainer = executor.Executor(
+        trainer = classification_executor.Executor(
             config=config,
             model=model,
             device=device,
             num_classes=data_loader_manager.num_classes,
-            save_name=args.save_name,
             seed=seed,
         )
         if args.baseline:
             print("Random initialisation")
-            trainer.save_model(model, save_file_name="initialisation")
+            save_model(model, save_file_name="initialisation", save_dir=config.models_dir)
         elif args.adversarial:
             print("Adversarial initialisation")
             adversarial_initialization = f"../models/adversarial/CIFAR10/VGG19/adversarial_initialization/{seed}/adversarial_initialization.pth"
@@ -204,35 +218,64 @@ def main(seed=None, run_num=0):
         else:
             raise Exception("Approach not specified")
 
-        wandb.define_metric("train/loss", summary="min")
-        wandb.define_metric("train/acc", summary="max")
-        wandb.define_metric("train/ECE", summary="max")
+        model, best_model = trainer.train_eval_loop(train_dataloader, dev_dataloader)
 
-        wandb.define_metric("eval/loss", summary="min")
-        wandb.define_metric("eval/acc", summary="max")
-        wandb.define_metric("eval/ECE", summary="max")
+        save_model(model, config.save_name, config.models_dir)
+        save_model(best_model, f"best_{config.save_name}", config.models_dir)
+    else:
+        best_model = copy.deepcopy(model)
+        model.load_state_dict(
+            torch.load(f"{config.models_dir}/{config.save_name}.pth"),
+        )
+        best_model.load_state_dict(
+            torch.load(f"{config.models_dir}/best_{config.save_name}.pth"),
+        )
 
-        trainer.train_eval_loop(train_dataloader, eval_dataloader)
 
-    for early_stopping in [True, False]:
-        print("Computing sharpness metrics for early stopping:", early_stopping)
+    if not os.path.isfile(
+        f"{config.models_dir}/best_with_temperature_{config.save_name}.pth"
+    ):
 
-        if early_stopping:
-            model.load_state_dict(
-                torch.load(f"{config.models_dir}/best_{config.save_name}.pth"),
-            )
-        else:
-            model.load_state_dict(
-                torch.load(f"{config.models_dir}/{config.save_name}.pth"),
-            )
+        print("Learning optimum temperature T value...")
+        temp_model = ModelWithTemperature(model, device=device)
+        temp_model.set_temperature(dev_dataloader)
+        save_model(temp_model, f"with_temperature_{config.save_name}", config.models_dir)
+        print("Without early stopping, T = ", temp_model.temperature.item())
+
+        temp_best_model = ModelWithTemperature(best_model, device=device)
+        temp_best_model.set_temperature(dev_dataloader)
+        save_model(temp_best_model, f"best_with_temperature_{config.save_name}", config.models_dir)
+        print("With early stopping, T = ", temp_best_model.temperature.item())
+    else:
+        temp_model = ModelWithTemperature(model, device=device)
+        temp_model.load_state_dict(
+            torch.load(f"{config.models_dir}/with_temperature_{config.save_name}.pth"),
+        )
+
+
+        temp_best_model = ModelWithTemperature(model, device=device)
+        temp_best_model.load_state_dict(
+            torch.load(f"{config.models_dir}/best_with_temperature_{config.save_name}.pth"),
+        )
+
+    model_dict = {
+        "model": model,
+        "best_model": best_model,
+        "temp_model": temp_model,
+        "temp_best_model": temp_best_model,
+    }
+
+    for model_name, torch_model in model_dict.items():
+        print("Computing sharpness metrics for:", model_name)
 
         mp = metrics_processor.MetricsProcessor(
             config=config,
-            model=model,
-            dataloader=sharpness_dataloader,
+            model=torch_model,
+            train_dataloader=sharpness_train_dataloader,
+            test_dataloader=test_dataloader,
             device=device,
             seed=seed,
-            early_stopping=early_stopping,
+            model_name=model_name,
         )
 
         results = mp.compute_metrics()

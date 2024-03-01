@@ -5,10 +5,11 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn as nn
-import wandb
 from torch.optim import SGD
 from torchmetrics.classification import MulticlassCalibrationError
 from tqdm import tqdm
+
+import wandb
 
 
 class Executor:
@@ -18,15 +19,12 @@ class Executor:
         model,
         device,
         num_classes,
-        save_name,
         seed,
     ):
         self.config = config
         self.device = device
         self.model = model.to(self.device)
         self.num_classes = num_classes
-
-        self.save_name = save_name
 
         self.seed = seed
 
@@ -47,6 +45,14 @@ class Executor:
         return val_loss.item(), val_pred
 
     def train_eval_loop(self, train_dataloader, eval_dataloader):
+
+        wandb.define_metric("train/loss", summary="min")
+        wandb.define_metric("train/acc", summary="max")
+        wandb.define_metric("train/ECE", summary="max")
+
+        wandb.define_metric("eval/loss", summary="min")
+        wandb.define_metric("eval/acc", summary="max")
+        wandb.define_metric("eval/ECE", summary="max")
 
         loss_fn = nn.CrossEntropyLoss()
         optimizer = SGD(
@@ -109,10 +115,7 @@ class Executor:
 
                 tepoch.set_postfix(
                     train_loss=train_loss,
-                    # train_ece=train_ece,
                     val_loss=val_loss,
-                    # val_ece=val_ece,
-                    # val_acc=val_acc,
                 )
 
                 train_acc = np.mean(train_accs)
@@ -134,30 +137,4 @@ class Executor:
                     best_model = copy.deepcopy(self.model)
                     best_epoch = epoch
 
-        print("-----------------")
-        self.save_model(best_model, file_prefix="best")
-        print(f"Best model at epoch {best_epoch} with val acc: {best_acc}")
-        print(f"Saved at: {self.config.models_dir}/best_{self.save_name}")
-
-        print("-----------------")
-        self.save_model(self.model)
-        print(f"Last model (epoch {self.config.num_epochs}) with val acc: {val_acc}")
-        print(f"Saved at: {self.config.models_dir}/best_{self.save_name}")
-        print("-----------------")
-
-    def save_model(self, model, save_file_name=None, file_prefix=""):
-
-        if save_file_name is None:
-            save_file_name = self.save_name
-
-        if file_prefix:
-            file_prefix = f"{file_prefix}_"
-        if os.path.isdir(self.config.models_dir) == False:
-            os.makedirs(self.config.models_dir)
-
-        full_save_dir = self.config.models_dir / f"{file_prefix}{save_file_name}.pth"
-        torch.save(
-            model.state_dict(),
-            full_save_dir,
-        )
-        print(f"Model saved at: {full_save_dir}")
+        return best_model, self.model
