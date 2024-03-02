@@ -388,8 +388,11 @@ class MetricsProcessor:
             y = y.to(self.device)
             #experiment_fast(model, False, X,y,criterion, criterion_alldata)
             IGS_dims, L, V, spurious_dim = calculate_IGS_largemodel(self.model, X, X,y,criterion, 1e-3,20,exact_fisher=True)
-            IGS.append(IGS_dims[-1])
-            
+            if len(IGS_dims)==20:
+                IGS.append(IGS_dims[-1])
+            else:
+                print("Warning: IGS calculation incomplete")
+                    
         return np.array(IGS).mean()
 
     @torch.no_grad()

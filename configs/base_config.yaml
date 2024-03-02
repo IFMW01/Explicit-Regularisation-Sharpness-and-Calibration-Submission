@@ -13,11 +13,12 @@ vgg_config: vgg_config.json
 metrics:
   - acc
   - ece
-  # - squared_euclidean_norm
+  - squared_euclidean_norm
   # - max_hessian_eigenvalue
   # - hessian_trace
-  # - fisher_rao_norm
-  # - relative_flatness
+  - fisher_rao_norm
+  - relative_flatness
+  - IGS
 #  - pacbayes_flatness
 
 # Other directories
