@@ -182,7 +182,7 @@ class MetricsProcessor:
         params = list(self.model.parameters())
         feature_layer_idx = -1
         for i in range(len(params)):
-            if params[i] is self.model.classifier.weight:
+            if params[i] is self.model.model.classifier.weight:
                 feature_layer_idx = i
 
         assert i is not -1

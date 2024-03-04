@@ -12,15 +12,19 @@ class ModelWithTemperature(nn.Module):
         NB: Output of the neural network should be the classification logits,
             NOT the softmax (or log softmax)!
     """
-    def __init__(self, model, device):
+    def __init__(self, model, device, temperature=1.5):
         super(ModelWithTemperature, self).__init__()
         self.model = model
-        self.temperature = nn.Parameter(torch.ones(1) * 1.5)
+        self.temperature = nn.Parameter(torch.ones(1) * temperature)
         self.device = device
 
-    def forward(self, input):
-        logits = self.model(input)
-        return self.temperature_scale(logits)
+    def forward(self, input, return_feat=False):
+        if return_feat:
+            logits, features = self.model(input, return_feat)
+            return self.temperature_scale(logits).to(self.device), features.to(self.device)
+        else:
+            logits = self.model(input)
+            return self.temperature_scale(logits)
 
     def temperature_scale(self, logits):
         """

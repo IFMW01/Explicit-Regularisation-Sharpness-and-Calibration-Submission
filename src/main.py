@@ -258,11 +258,17 @@ def main(seed=None, run_num=0):
             torch.load(f"{config.models_dir}/best_with_temperature_{config.save_name}.pth"),
         )
 
+    with open("/home/is473/rds/hpc-work/R252_Group_Project/data/models/temp_model.txt", "w") as f:
+        print(temp_model, file=f)
+
+    with open("/home/is473/rds/hpc-work/R252_Group_Project/data/models/model.txt", "w") as f:
+        print(model, file=f)
+
     model_dict = {
-        "model": model,
-        "best_model": best_model,
-        "temp_model": temp_model,
-        "temp_best_model": temp_best_model,
+        "temp_model": temp_model.to(device),
+        "temp_best_model": temp_best_model.to(device),
+        "model": ModelWithTemperature(model, device=device, temperature=1.0).to(device),
+        "best_model": ModelWithTemperature(best_model, device=device, temperature=1.0).to(device),
     }
 
     for model_name, torch_model in model_dict.items():
