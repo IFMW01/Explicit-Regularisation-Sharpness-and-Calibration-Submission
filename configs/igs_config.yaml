@@ -11,14 +11,14 @@ vgg_config: vgg_config.json
 
 # Metrics
 metrics:
-  - acc
-  - ece
-  - squared_euclidean_norm
+  # - acc
+  # - ece
+  # - squared_euclidean_norm
   # - max_hessian_eigenvalue
   # - hessian_trace
-  - fisher_rao_norm
+  # - fisher_rao_norm
   # - relative_flatness
-  # - IGS
+  - IGS
 #  - pacbayes_flatness
 
 # Other directories
@@ -32,5 +32,5 @@ wandb:
   entity: 'r252_project'
 
 # Sharpness calculation
-sharpness_dataset_size: -1
-sharpness_batch_size: 10000
+sharpness_dataset_size: 2000
+sharpness_batch_size: 96
