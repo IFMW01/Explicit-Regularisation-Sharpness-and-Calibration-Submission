@@ -1,9 +1,9 @@
 # Training parameters
-seed: 42 # overwritten in main.py 
+seed: [43, 91, 17] # overwritten in main.py 
 batch_size: 256
 learning_rate: 0.001
 momentum: 0.9
-num_epochs: 30
+num_epochs: 25
 
 # Model configuration
 models_dir: ../models
@@ -32,5 +32,5 @@ wandb:
   entity: 'r252_project'
 
 # Sharpness calculation
-sharpness_dataset_size: 25000
+sharpness_dataset_size: 7500
 sharpness_batch_size: 7500
