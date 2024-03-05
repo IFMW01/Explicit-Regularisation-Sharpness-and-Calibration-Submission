@@ -28,9 +28,9 @@ cifar_dir: ../data/cifar
 
 wandb:
   experiment_name: '' # overwritten in main.py
-  project: 'YOUR PROJECT NAME'
+  project: 'NAME'
   entity: 'r252_project'
 
 # Sharpness calculation
-sharpness_dataset_size: 2000
-sharpness_batch_size: 96
+sharpness_dataset_size: 1000
+sharpness_batch_size: 256
