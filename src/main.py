@@ -7,6 +7,7 @@ from pprint import pprint
 
 import numpy as np
 import torch
+import wandb
 import yaml
 from easydict import EasyDict
 
@@ -14,7 +15,6 @@ import data_loader_manager.dataloaders as dataloaders
 import models.vgg_model as vgg_model
 import trainers.classification_executor as classification_executor
 import trainers.metrics_processor as metrics_processor
-import wandb
 from models.temperature_scaling import ModelWithTemperature
 
 
@@ -286,6 +286,14 @@ def main(seed=None, run_num=0):
 
 
 if __name__ == "__main__":
-    seeds = [43, 91, 17]
+    args = options_parser()
+
+    with open(args.config_file, "r") as file:
+        config = yaml.safe_load(file)
+
+    config.update(vars(args))
+
+    seeds = config.seed
+    # seeds = [43, 91, 17]
     for seed in seeds:
         main(seed)
