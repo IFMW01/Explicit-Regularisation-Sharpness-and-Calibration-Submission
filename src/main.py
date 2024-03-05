@@ -290,10 +290,8 @@ if __name__ == "__main__":
 
     with open(args.config_file, "r") as file:
         config = yaml.safe_load(file)
-
     config.update(vars(args))
-
-    seeds = config.seed
+    seeds = config["seed"]
     # seeds = [43, 91, 17]
     for seed in seeds:
         main(seed)
