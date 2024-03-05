@@ -32,5 +32,5 @@ wandb:
   entity: 'r252_project'
 
 # Sharpness calculation
-sharpness_dataset_size: 1000
+sharpness_dataset_size: 750
 sharpness_batch_size: 36
