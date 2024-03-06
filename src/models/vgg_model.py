@@ -14,7 +14,7 @@ class VGG(nn.Module):
         self.features = self._make_layers(cfg[vgg_name])
         self.n_maps = cfg[vgg_name][-2]
         self.fc = self._make_fc_layers()
-        self.classifier = nn.Linear(self.n_maps, 10)
+        self.classifier = nn.Linear(self.n_maps, 100)
         if dropout > 0.0:
             self.dropout = nn.Dropout(dropout)
         else:
