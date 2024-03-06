@@ -61,25 +61,10 @@ python main.py \
     --config_file ../configs/base_config.yaml \
     --model_name VGG19 \
     --baseline True \
-    --weight_decay 0.05 \
+    --weight_decay 5e-4 \
     --dataset CIFAR10  \
-    --save_name baseline_weight_decay_0_05
+    --save_name baseline_weight_decay_0_0005
 
-python main.py \
-    --config_file ../configs/base_config.yaml \
-    --model_name VGG19 \
-    --baseline True \
-    --weight_decay 0.1 \
-    --dataset CIFAR10  \
-    --save_name baseline_weight_decay_0_1
-
-python main.py \
-    --config_file ../configs/base_config.yaml \
-    --model_name VGG19 \
-    --baseline True \
-    --weight_decay 0.15 \
-    --dataset CIFAR10  \
-    --save_name baseline_weight_decay_0_15
 ```
 
 ### Adversarial initialization
@@ -132,25 +117,10 @@ python main.py \
     --config_file ../configs/base_config.yaml \
     --model_name VGG19 \
     --adversarial True \
-    --weight_decay 0.05 \
+    --weight_decay 5e-4 \
     --dataset CIFAR10  \
     --save_name adversarial_weight_decay_0_05
 
-python main.py \
-    --config_file ../configs/base_config.yaml \
-    --model_name VGG19 \
-    --adversarial True \
-    --weight_decay 0.1 \
-    --dataset CIFAR10  \
-    --save_name adversarial_weight_decay_0_1
-
-python main.py \
-    --config_file ../configs/base_config.yaml \
-    --model_name VGG19 \
-    --adversarial True \
-    --weight_decay 0.15 \
-    --dataset CIFAR10  \
-    --save_name adversarial_weight_decay_0_15
 ```
 
 
