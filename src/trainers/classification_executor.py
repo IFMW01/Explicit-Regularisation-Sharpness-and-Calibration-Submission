@@ -73,6 +73,7 @@ class Executor:
                 train_ece = MulticlassCalibrationError(
                     num_classes=self.num_classes, n_bins=15, norm="l1"
                 ).to(self.device)
+
                 running_loss = 0
 
                 train_accs = []
@@ -126,6 +127,7 @@ class Executor:
                         "train/loss": train_loss,
                         "train/ECE": train_ece,
                         "train/acc": train_acc,
+                        "train/learning_rate": optimizer.param_groups[0]["lr"],
                         "eval/loss": val_loss,
                         "eval/ECE": val_ece,
                         "eval/acc": val_acc,

@@ -7,7 +7,6 @@ from pprint import pprint
 
 import numpy as np
 import torch
-import wandb
 import yaml
 from easydict import EasyDict
 
@@ -15,6 +14,7 @@ import data_loader_manager.dataloaders as dataloaders
 import models.vgg_model as vgg_model
 import trainers.classification_executor as classification_executor
 import trainers.metrics_processor as metrics_processor
+import wandb
 from models.temperature_scaling import ModelWithTemperature
 
 
@@ -48,13 +48,13 @@ def options_parser():
         "--dropout",
         default=0.0,
         type=float,
-        help="Amount of dropout to be applied e.g. 0.05,0.1,0.15",
+        help="Amount of dropout to be applied e.g. 0.05,0.1,0.15,0.5",
     )
     parser.add_argument(
         "--weight_decay",
         default=0.0,
         type=float,
-        help="Use values between 0 and 0.1 i.e. try 0.01, 0.05 and 0.1 and then take the best reult to present",
+        help="Use 5e-4??" # values between 0 and 0.1 i.e. try 0.01, 0.05 and 0.1 and then take the best reult to present
     )
 
     parser.add_argument(
@@ -223,6 +223,7 @@ def main(seed=None, run_num=0):
         save_model(model, config.save_name, config.models_dir)
         save_model(best_model, f"best_{config.save_name}", config.models_dir)
     else:
+        print(f"Found model in {config.models_dir}/best_{config.save_name}, loading it up!")
         best_model = copy.deepcopy(model)
         model.load_state_dict(
             torch.load(f"{config.models_dir}/{config.save_name}.pth"),
