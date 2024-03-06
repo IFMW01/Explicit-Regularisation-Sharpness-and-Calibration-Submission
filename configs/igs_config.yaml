@@ -28,7 +28,7 @@ cifar_dir: ../data/cifar
 
 wandb:
   experiment_name: '' # overwritten in main.py
-  project: 'NAME'
+  project: 'VGG19_CIFAR10_FINAL'
   entity: 'r252_project'
 
 # Sharpness calculation
