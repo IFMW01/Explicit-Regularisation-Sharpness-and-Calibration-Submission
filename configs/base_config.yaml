@@ -3,7 +3,7 @@ seed: [43, 91, 17] # overwritten in main.py
 batch_size: 256
 learning_rate: 0.05
 momentum: 0.9
-num_epochs: 50
+num_epochs: 75
 
 # Model configuration
 models_dir: ../models
