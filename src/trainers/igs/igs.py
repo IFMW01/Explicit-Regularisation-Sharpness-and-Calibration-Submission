@@ -1330,14 +1330,14 @@ def calculate_IGS_largemodel(model, X_F, X, y, criterion, tol, top_n, exact_fish
             Js.append(calculate_jacobian_wrt_params_alldata_dataloader(model, X_F, y_F, criterion))
             trF += ((ps[:,i:i+1].sqrt()*Js[i])**2).sum().item() / X_F.shape[0]
 
-        L, V, spurious_dim, _ = eigproblem_JTJ_multi(Js, ps, maxIter=100, tol=tol, top_n=top_n, printinfo = False)
+        L, V, spurious_dim, _ = eigproblem_JTJ_multi(Js, ps, maxIter=1000, tol=tol, top_n=top_n, printinfo = False)
         L_F_gram = []
     else:
         K = torch.distributions.categorical.Categorical(logits = output)
         y_F = K.sample()
         J = calculate_jacobian_wrt_params_alldata_dataloader(model, X_F, y_F, criterion)
 
-        L, V, spurious_dim, _ = eigproblem_JTJ(J, maxIter=100, tol=tol, top_n=top_n, printinfo = False)
+        L, V, spurious_dim, _ = eigproblem_JTJ(J, maxIter=1000, tol=tol, top_n=top_n, printinfo = False)
         trF = (J**2).sum().item()/X_F.shape[0]
         # exact eigvals
         #L_F_gram, _ = torch.symeig(J.mm(J.permute(1,0)) / X_F.shape[0], eigenvectors=False)
