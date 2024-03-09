@@ -378,7 +378,7 @@ class MetricsProcessor:
         # print("Neuronwise tracial measure is", trace_nm)
         # print("Neuronwise max eigenvalue measure is", maxeigen_nm)
     
-    def IGS(self):
+    def IGS(self, output_all=False):
         criterion = torch.nn.CrossEntropyLoss()
         criterion_alldata = torch.nn.CrossEntropyLoss(reduction = 'none')
         
@@ -398,7 +398,9 @@ class MetricsProcessor:
                  
         if num_fails>len(IGS):
             print("Warning: failed IGS calculation")
-           
+        
+        if output_all:
+            return IGS
         return np.array(IGS).mean()
 
     @torch.no_grad()
