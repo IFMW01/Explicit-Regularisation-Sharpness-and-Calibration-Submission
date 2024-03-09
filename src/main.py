@@ -125,13 +125,10 @@ def main(seed=None, run_num=0):
 
     config = EasyDict(config)
 
-    config.models_dir = Path(config.models_dir)
-    if args.adversarial:
-        config.models_dir = config.models_dir / "adversarial"
-    else:
-        config.models_dir = config.models_dir / "baseline"
+    config.models_dir = Path(config.models_dir) / args.dataset
+
     config.models_dir = (
-        config.models_dir / args.dataset / args.model_name / args.save_name / str(seed)
+        config.models_dir / args.save_name / str(seed)
     )
 
     config.config_dir = Path(config.config_dir)
@@ -142,15 +139,6 @@ def main(seed=None, run_num=0):
     device = get_device()
 
     print("Loading model")
-
-    if config.model_name.startswith("VGG"):
-        model = vgg_model.VGG(
-            vgg_name=args.model_name,
-            dropout=args.dropout,
-            vgg_config=config.config_dir / config.vgg_config,
-        ).to(device)
-    else:
-        raise NotImplementedError(f"Model {config.model_name} not implemented")
 
     data_loader_manager = dataloaders.DataLoaderManager(
         config=config,
@@ -166,6 +154,16 @@ def main(seed=None, run_num=0):
         test_dataloader,
         sharpness_train_dataloader,
     ) = data_loader_manager.get_dataloaders()
+
+    if config.model_name.startswith("VGG"):
+        model = vgg_model.VGG(
+            vgg_name=args.model_name,
+            dropout=args.dropout,
+            num_classes=data_loader_manager.num_classes,
+            vgg_config=config.config_dir / config.vgg_config,
+        ).to(device)
+    else:
+        raise NotImplementedError(f"Model {config.model_name} not implemented")
 
     if args.baseline and args.adversarial:
         approach = "baseline-adversarial"
@@ -185,14 +183,15 @@ def main(seed=None, run_num=0):
     else:
         reg_method = "no-regularisation"
 
-    wandb.init(
-        project=config.wandb.project,
-        entity=config.wandb.entity,
-        config=config,
-        group=f"{args.model_name}-{args.dataset}-{approach}-with-{reg_method}",
-    )
-    wandb.run.name = (f"{args.model_name}-{args.dataset}-{approach}-with-{reg_method}-seed-{seed}"
-    )
+    if config.wandb.use_wandb:
+        wandb.init(
+            project=config.wandb.project,
+            entity=config.wandb.entity,
+            config=config,
+            group=f"{args.model_name}-{args.dataset}-{approach}-with-{reg_method}",
+        )
+        wandb.run.name = (f"{args.model_name}-{args.dataset}-{approach}-with-{reg_method}-seed-{seed}"
+        )
 
     if not os.path.isfile(f"{config.models_dir}/best_{config.save_name}.pth"):
         print(
@@ -226,7 +225,7 @@ def main(seed=None, run_num=0):
         print(f"Found model in {config.models_dir}/best_{config.save_name}, loading it up!")
         best_model = copy.deepcopy(model)
         model.load_state_dict(
-            torch.load(f"{config.models_dir}/{config.save_name}.pth"),
+            torch.load(f"{config.models_dir}/{config.save_name}.pth"), 
         )
         best_model.load_state_dict(
             torch.load(f"{config.models_dir}/best_{config.save_name}.pth"),
@@ -246,6 +245,7 @@ def main(seed=None, run_num=0):
         temp_best_model = ModelWithTemperature(best_model, device=device)
         temp_best_model.set_temperature(dev_dataloader)
         save_model(temp_best_model, f"best_with_temperature_{config.save_name}", config.models_dir)
+
         print("With early stopping, T = ", temp_best_model.temperature.item())
     else:
         temp_model = ModelWithTemperature(model, device=device)
@@ -277,13 +277,15 @@ def main(seed=None, run_num=0):
             device=device,
             seed=seed,
             model_name=model_name,
+            num_classes=data_loader_manager.num_classes
         )
 
         results = mp.compute_metrics()
+        if config.wandb.use_wandb:
 
-        wandb.log(results)
-
-    wandb.finish()
+            wandb.log(results)
+    if config.wandb.use_wandb:
+        wandb.finish()
 
 
 if __name__ == "__main__":

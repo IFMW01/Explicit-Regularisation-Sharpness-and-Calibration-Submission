@@ -19,7 +19,7 @@ from trainers.igs.igs import calculate_IGS_largemodel
 
 class MetricsProcessor:
 
-    def __init__(self, config, model, train_dataloader, test_dataloader, device, seed, model_name) -> None:
+    def __init__(self, config, model, train_dataloader, test_dataloader, device, seed, model_name, num_classes) -> None:
         self.config = config
         self.model = model
         self.train_dataloader = train_dataloader
@@ -30,6 +30,7 @@ class MetricsProcessor:
 
         self.cache_max_hessian_eigenvalue = None
         self.cache_hessian_trace = None
+        self.num_classes = num_classes
 
     def compute_metrics(self):
         """
@@ -437,6 +438,88 @@ class MetricsProcessor:
         acc = correct / total
 
         return acc
+
+    @torch.no_grad()
+    def reliability_plot(self):
+
+        logits_list = []
+        labels_list = []
+        ece_criterion = _ECELoss().to(self.device)
+
+        preds = []
+        labels_oneh = []
+
+        sm = nn.Softmax(dim=1)
+
+        for inputs, labels in tqdm(self.test_dataloader):
+            inputs = inputs.to(self.device)
+            labels = labels.to(self.device)
+
+            pred = self.model(inputs)
+
+            logits_list.append(pred)
+            labels_list.append(labels)
+                        
+            pred = sm(pred)
+
+            _, predicted_cl = torch.max(pred.data, 1)
+            pred = pred.cpu().detach().numpy()
+
+            label_oneh = torch.nn.functional.one_hot(labels, num_classes=self.num_classes)
+            label_oneh = label_oneh.cpu().detach().numpy()
+
+            preds.extend(pred)
+            labels_oneh.extend(label_oneh)
+
+        preds = np.array(preds).flatten()
+        labels_oneh = np.array(labels_oneh).flatten()
+
+        logits = torch.cat(logits_list).to(self.device)
+        labels = torch.cat(labels_list).to(self.device)
+
+        ECE = ece_criterion(logits, labels).item() * 100
+
+        bins, _, bin_accs, _, _ = self.calc_bins(preds, labels_oneh, num_bins=11)
+
+        bins = bins[1:]
+        bin_accs = bin_accs[1:]
+
+        with open("/home/is473/rds/hpc-work/R252_Group_Project/data/reliability_plot_template.txt", "r") as f:
+            template = f.read()
+
+        data = [(bin-0.1, acc) for bin, acc in zip(bins, bin_accs)]
+        data = [str(x) for x in data]
+        data = " ".join(data)
+
+        tikz_plot = template.replace("FILL-IN-ECE-HERE", str(round(ECE, 2)))
+        tikz_plot = tikz_plot.replace("FILL-IN-MODEL-DATA-HERE", data)
+
+        with open(self.config.models_dir / f"{self.model_name}_reliability_plot.tex", "w") as f:
+            f.write(tikz_plot)
+    
+    @staticmethod
+    def calc_bins(preds, labels_oneh, num_bins=11):
+
+        bins = np.linspace(0.0, 1, num_bins)
+        binned = np.digitize(preds, bins)
+
+        bin_accs = np.zeros(num_bins)
+        bin_confs = np.zeros(num_bins)
+        bin_sizes = np.zeros(num_bins)
+
+        for bin in range(num_bins):
+            bin_sizes[bin] = len(preds[binned == bin])
+            if bin_sizes[bin] > 0:
+                bin_accs[bin] = (labels_oneh[binned==bin]).sum() / bin_sizes[bin]
+                bin_confs[bin] = (preds[binned==bin]).sum() / bin_sizes[bin]
+
+        print(bins)
+        print(bin_accs)
+
+        assert bin_accs[0] == 0.0
+
+
+        return bins, binned, bin_accs, bin_confs, bin_sizes
 
 
 # def all_sharpness_measures(dataloader):

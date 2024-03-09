@@ -1,0 +1,29 @@
+# Training parameters
+seed: [17] # overwritten in main.py 
+batch_size: 256
+learning_rate: 0.05
+momentum: 0.9
+num_epochs: 75
+
+# Model configuration
+models_dir: ../models
+vgg_config: vgg_config.json  
+
+# Metrics
+metrics:
+  - reliability_plot
+
+# Other directories
+config_dir: ../configs
+
+cifar_dir: ../data/cifar
+
+wandb:
+  experiment_name: '' # overwritten in main.py
+  project: 'RELIABILITY-PLOTS'
+  entity: 'r252_project'
+  use_wandb: False
+
+# Sharpness calculation
+sharpness_dataset_size: 750
+sharpness_batch_size: 36

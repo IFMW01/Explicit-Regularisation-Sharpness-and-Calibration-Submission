@@ -4,7 +4,7 @@ import torch.nn as nn
 
 
 class VGG(nn.Module):
-    def __init__(self, vgg_name, vgg_config, dropout=0.0):
+    def __init__(self, vgg_name, vgg_config, num_classes, dropout=0.0):
         super(VGG, self).__init__()
 
         with open(vgg_config, "r") as f:
@@ -14,7 +14,7 @@ class VGG(nn.Module):
         self.features = self._make_layers(cfg[vgg_name])
         self.n_maps = cfg[vgg_name][-2]
         self.fc = self._make_fc_layers()
-        self.classifier = nn.Linear(self.n_maps, 100)
+        self.classifier = nn.Linear(self.n_maps, num_classes)
         if dropout > 0.0:
             self.dropout = nn.Dropout(dropout)
         else:
