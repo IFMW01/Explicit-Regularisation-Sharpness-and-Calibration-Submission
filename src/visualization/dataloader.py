@@ -18,7 +18,7 @@ class CIFAR100RandomLabels(torchvision.datasets.CIFAR100):
   num_classes: int
     Default 10. The number of classes in the dataset.
   """
-  def __init__(self, corrupt_prob=0.0, num_classes=10, **kwargs):
+  def __init__(self, corrupt_prob=0.0, num_classes=100, **kwargs):
     super(CIFAR100RandomLabels, self).__init__(**kwargs)
     self.n_classes = num_classes
     if corrupt_prob > 0:
