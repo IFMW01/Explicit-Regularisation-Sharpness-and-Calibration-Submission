@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 
-
 cfg = {
     'VGG9':  [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M'],
     'VGG16': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'],
@@ -16,7 +15,7 @@ class VGG(nn.Module):
         self.features = self._make_layers(cfg[vgg_name])
         self.n_maps = cfg[vgg_name][-2]
         self.fc = self._make_fc_layers()
-        self.classifier = nn.Linear(self.n_maps, 10)
+        self.classifier = nn.Linear(self.n_maps, 100)
 
     def forward(self, x):
         out = self.features(x)

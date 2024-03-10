@@ -1,8 +1,10 @@
 import os
-import torch, torchvision
-import cifar10.models.vgg as vgg
-import cifar10.models.resnet as resnet
-import cifar10.models.densenet as densenet
+
+import cifar100.models.densenet as densenet
+import cifar100.models.resnet as resnet
+import cifar100.models.vgg as vgg
+import torch
+import torchvision
 
 # map between model name and function
 models = {

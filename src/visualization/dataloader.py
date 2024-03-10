@@ -1,12 +1,13 @@
+import argparse
+import os
+
+import numpy as np
 import torch
 import torchvision
 from torchvision import transforms
-import os
-import numpy as np
-import argparse
 
 
-class CIFAR10RandomLabels(torchvision.datasets.CIFAR10):
+class CIFAR100RandomLabels(torchvision.datasets.CIFAR100):
   """CIFAR10 dataset, with support for randomly corrupt labels.
 
   Params
@@ -18,7 +19,7 @@ class CIFAR10RandomLabels(torchvision.datasets.CIFAR10):
     Default 10. The number of classes in the dataset.
   """
   def __init__(self, corrupt_prob=0.0, num_classes=10, **kwargs):
-    super(CIFAR10RandomLabels, self).__init__(**kwargs)
+    super(CIFAR100RandomLabels, self).__init__(**kwargs)
     self.n_classes = num_classes
     if corrupt_prob > 0:
       self.corrupt_labels(corrupt_prob)
@@ -40,7 +41,7 @@ def get_relative_path(file):
     return os.path.join(script_dir, file)
 
 
-def load_dataset(dataset='cifar10', datapath='cifar10/data', batch_size=128, \
+def load_dataset(dataset='cifar100', datapath='cifar100/data', batch_size=128, \
                  threads=2, raw_data=False, data_split=1, split_idx=0, \
                  trainloader_path="", testloader_path=""):
     """
@@ -66,7 +67,7 @@ def load_dataset(dataset='cifar10', datapath='cifar10/data', batch_size=128, \
 
     assert split_idx < data_split, 'the index of data partition should be smaller than the total number of split'
 
-    if dataset == 'cifar10':
+    if dataset == 'cifar100':
         normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
                                          std=[x/255.0 for x in [63.0, 62.1, 66.7]])
 
@@ -81,7 +82,7 @@ def load_dataset(dataset='cifar10', datapath='cifar10/data', batch_size=128, \
                 normalize,
             ])
 
-        trainset = torchvision.datasets.CIFAR10(root=data_folder, train=True,
+        trainset = torchvision.datasets.CIFAR100(root=data_folder, train=True,
                                                 download=True, transform=transform)
         # If data_split>1, then randomly select a subset of the data. E.g., if datasplit=3, then
         # randomly choose 1/3 of the data.
@@ -103,12 +104,12 @@ def load_dataset(dataset='cifar10', datapath='cifar10/data', batch_size=128, \
             kwargs = {'num_workers': 2, 'pin_memory': True}
             train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
                                                       shuffle=False, **kwargs)
-        testset = torchvision.datasets.CIFAR10(root=data_folder, train=False,
+        testset = torchvision.datasets.CIFAR100(root=data_folder, train=False,
                                                download=False, transform=transform)
         test_loader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
                                                   shuffle=False, num_workers=threads)
         
-    if dataset == 'cifar10r':
+    if dataset == 'cifar100r':
         normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
                                          std=[x/255.0 for x in [63.0, 62.1, 66.7]])
 
@@ -122,7 +123,7 @@ def load_dataset(dataset='cifar10', datapath='cifar10/data', batch_size=128, \
                 transforms.ToTensor(),
                 normalize,
             ])
-        trainset = CIFAR10RandomLabels(1.0,root=data_folder,download=True,transform=transform,train=True)
+        trainset = CIFAR100RandomLabels(1.0,root=data_folder,download=True,transform=transform,train=True)
        
         # If data_split>1, then randomly select a subset of the data. E.g., if datasplit=3, then
         # randomly choose 1/3 of the data.
@@ -144,7 +145,7 @@ def load_dataset(dataset='cifar10', datapath='cifar10/data', batch_size=128, \
             kwargs = {'num_workers': 2, 'pin_memory': True}
             train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
                                                       shuffle=False, **kwargs)
-        testset = torchvision.datasets.CIFAR10(root=data_folder, train=False,
+        testset = torchvision.datasets.CIFAR100(root=data_folder, train=False,
                                                download=False, transform=transform)
         test_loader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
                                                   shuffle=False, num_workers=threads)
@@ -160,13 +161,13 @@ def load_dataset(dataset='cifar10', datapath='cifar10/data', batch_size=128, \
 ###############################################################
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
+    parser = argparse.ArgumentParser(description='PyTorch CIFAR100 Training')
     parser.add_argument('--mpi', '-m', action='store_true', help='use mpi')
     parser.add_argument('--cuda', '-c', action='store_true', help='use cuda')
     parser.add_argument('--threads', default=2, type=int, help='number of threads')
     parser.add_argument('--batch_size', default=128, type=int, help='minibatch size')
-    parser.add_argument('--dataset', default='cifar10', help='cifar10 | imagenet')
-    parser.add_argument('--datapath', default='cifar10/data', metavar='DIR', help='path to the dataset')
+    parser.add_argument('--dataset', default='cifar100', help='cifar100 | imagenet')
+    parser.add_argument('--datapath', default='cifar100/data', metavar='DIR', help='path to the dataset')
     parser.add_argument('--raw_data', action='store_true', default=False, help='do not normalize data')
     parser.add_argument('--data_split', default=1, type=int, help='the number of splits for the dataloader')
     parser.add_argument('--split_idx', default=0, type=int, help='the index of data splits for the dataloader')

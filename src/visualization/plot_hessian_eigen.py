@@ -4,24 +4,25 @@
 
 import argparse
 import copy
-import numpy as np
-import h5py
-import torch
-import time
-import socket
 import os
+import socket
 import sys
-import torchvision
-import torch.nn as nn
-import mpi4pytorch
+import time
+
 import dataloader
-import net_plotter
-import plot_2D
-import plot_1D
-import model_loader
-import scheduler
-import projection as proj
+import h5py
 import hess_vec_prod
+import model_loader
+import mpi4pytorch
+import net_plotter
+import numpy as np
+import plot_1D
+import plot_2D
+import projection as proj
+import scheduler
+import torch
+import torch.nn as nn
+import torchvision
 from plot_surface import name_surface_file, setup_surface_file
 
 
@@ -118,8 +119,8 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', default=128, type=int, help='minibatch size')
 
     # data parameters
-    parser.add_argument('--dataset', default='cifar10', help='cifar10 | imagenet')
-    parser.add_argument('--datapath', default='cifar10/data', metavar='DIR', help='path to the dataset')
+    parser.add_argument('--dataset', default='cifar100', help='cifar100 | imagenet')
+    parser.add_argument('--datapath', default='cifar100/data', metavar='DIR', help='path to the dataset')
     parser.add_argument('--raw_data', action='store_true', default=False, help='no data preprocessing')
     parser.add_argument('--data_split', default=1, type=int, help='the number of splits for the dataloader')
     parser.add_argument('--split_idx', default=0, type=int, help='the index of data splits for the dataloader')
@@ -219,8 +220,8 @@ if __name__ == '__main__':
     # Setup dataloader
     #--------------------------------------------------------------------------
     # download CIFAR10 if it does not exit
-    if rank == 0 and args.dataset == 'cifar10':
-        torchvision.datasets.CIFAR10(root=args.dataset + '/data', train=True, download=True)
+    if rank == 0 and args.dataset == 'cifar100':
+        torchvision.datasets.CIFAR100(root=args.dataset + '/data', train=True, download=True)
 
     mpi4pytorch.barrier(comm)
 
