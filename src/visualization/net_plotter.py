@@ -2,13 +2,15 @@
     Manipulate network parameters and setup random directions with normalization.
 """
 
-import torch
 import copy
-from os.path import exists, commonprefix
-import h5py
-import h5_util
-import model_loader
 import os
+from os.path import commonprefix, exists
+
+import h5_util
+import h5py
+import model_loader
+import torch
+
 
 ################################################################################
 #                 Supporting functions for weights manipulation

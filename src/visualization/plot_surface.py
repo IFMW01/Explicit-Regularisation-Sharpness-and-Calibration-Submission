@@ -199,9 +199,9 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default=128, type=int, help="minibatch size")
 
     # data parameters
-    parser.add_argument("--dataset", default="cifar100", help="cifar100 | cifar100r")
+    parser.add_argument("--dataset", default="cifar10", help="cifar10 | cifar10r")
     parser.add_argument(
-        "--datapath", default="cifar100/data", metavar="DIR", help="path to the dataset"
+        "--datapath", default="cifar10/data", metavar="DIR", help="path to the dataset"
     )
     parser.add_argument(
         "--raw_data", action="store_true", default=False, help="no data preprocessing"
@@ -408,7 +408,7 @@ if __name__ == "__main__":
     # Setup dataloader
     # --------------------------------------------------------------------------
     # download CIFAR10 if it does not exit
-    if rank == 0 and args.dataset == "cifar100":
+    if rank == 0 and args.dataset == "cifar10":
         torchvision.datasets.CIFAR100(
             root=args.dataset + "/data", train=True, download=True
         )

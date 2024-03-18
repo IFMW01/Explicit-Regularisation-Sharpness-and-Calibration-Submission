@@ -1,9 +1,11 @@
-import torch
 import time
+
 import numpy as np
+import torch
+from scipy.sparse.linalg import LinearOperator, eigsh
 from torch import nn
 from torch.autograd import Variable
-from scipy.sparse.linalg import LinearOperator, eigsh
+
 
 ################################################################################
 #                              Supporting Functions

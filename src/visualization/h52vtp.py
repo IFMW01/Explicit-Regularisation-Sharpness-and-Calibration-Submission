@@ -21,11 +21,13 @@
     </VTKFile>
 """
 
-import math
 import argparse
+import math
+
 import h5py
 import numpy as np
 from scipy import interpolate
+
 
 def h5_to_vtp(surf_file, surf_name='train_loss', log=False, zmax=-1, interp=-1):
     #set this to True to generate points

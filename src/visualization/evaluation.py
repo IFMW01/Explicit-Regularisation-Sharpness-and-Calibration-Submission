@@ -3,11 +3,13 @@
     the loss value, accuracy and eigen values of the hessian matrix
 """
 
+import time
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import time
 from torch.autograd.variable import Variable
+
 
 def eval_loss(net, criterion, loader, use_cuda=False):
     """
