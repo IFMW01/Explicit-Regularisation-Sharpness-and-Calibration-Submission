@@ -3,8 +3,9 @@
  allocation and other data formatting tasks so that tensors can be easily reduced/broadcast using 1 line of code.
 """
 
-import numpy as np
 import mpi4py
+import numpy as np
+
 
 def setup_MPI():
     try:

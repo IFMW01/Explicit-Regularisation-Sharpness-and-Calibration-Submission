@@ -3,6 +3,7 @@
 """
 import numpy as np
 
+
 def get_unplotted_indices(vals, xcoordinates, ycoordinates=None):
     """
     Args:

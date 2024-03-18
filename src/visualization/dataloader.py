@@ -41,7 +41,7 @@ def get_relative_path(file):
     return os.path.join(script_dir, file)
 
 
-def load_dataset(dataset='cifar100', datapath='cifar100/data', batch_size=128, \
+def load_dataset(dataset='cifar10', datapath='cifar10/data', batch_size=128, \
                  threads=2, raw_data=False, data_split=1, split_idx=0, \
                  trainloader_path="", testloader_path=""):
     """
@@ -67,7 +67,7 @@ def load_dataset(dataset='cifar100', datapath='cifar100/data', batch_size=128, \
 
     assert split_idx < data_split, 'the index of data partition should be smaller than the total number of split'
 
-    if dataset == 'cifar100':
+    if dataset == 'cifar10':
         normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
                                          std=[x/255.0 for x in [63.0, 62.1, 66.7]])
 
@@ -109,7 +109,7 @@ def load_dataset(dataset='cifar100', datapath='cifar100/data', batch_size=128, \
         test_loader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
                                                   shuffle=False, num_workers=threads)
         
-    if dataset == 'cifar100r':
+    if dataset == 'cifar10r':
         normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
                                          std=[x/255.0 for x in [63.0, 62.1, 66.7]])
 
@@ -166,8 +166,8 @@ if __name__ == '__main__':
     parser.add_argument('--cuda', '-c', action='store_true', help='use cuda')
     parser.add_argument('--threads', default=2, type=int, help='number of threads')
     parser.add_argument('--batch_size', default=128, type=int, help='minibatch size')
-    parser.add_argument('--dataset', default='cifar100', help='cifar100 | imagenet')
-    parser.add_argument('--datapath', default='cifar100/data', metavar='DIR', help='path to the dataset')
+    parser.add_argument('--dataset', default='cifar10', help='cifar10 | imagenet')
+    parser.add_argument('--datapath', default='cifar10/data', metavar='DIR', help='path to the dataset')
     parser.add_argument('--raw_data', action='store_true', default=False, help='do not normalize data')
     parser.add_argument('--data_split', default=1, type=int, help='the number of splits for the dataloader')
     parser.add_argument('--split_idx', default=0, type=int, help='the index of data splits for the dataloader')

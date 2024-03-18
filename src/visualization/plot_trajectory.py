@@ -2,18 +2,18 @@
     Plot the optimization path in the space spanned by principle directions.
 """
 
-import numpy as np
-import torch
+import argparse
 import copy
 import math
-import h5py
 import os
-import argparse
+
+import h5py
 import model_loader
 import net_plotter
-from projection import setup_PCA_directions, project_trajectory
+import numpy as np
 import plot_2D
-
+import torch
+from projection import project_trajectory, setup_PCA_directions
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Plot optimization trajectory')
