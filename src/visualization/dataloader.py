@@ -7,7 +7,7 @@ import torchvision
 from torchvision import transforms
 
 
-class CIFAR100RandomLabels(torchvision.datasets.CIFAR100):
+class CIFAR10RandomLabels(torchvision.datasets.CIFAR10):
   """CIFAR10 dataset, with support for randomly corrupt labels.
 
   Params
@@ -19,7 +19,7 @@ class CIFAR100RandomLabels(torchvision.datasets.CIFAR100):
     Default 10. The number of classes in the dataset.
   """
   def __init__(self, corrupt_prob=0.0, num_classes=100, **kwargs):
-    super(CIFAR100RandomLabels, self).__init__(**kwargs)
+    super(CIFAR10RandomLabels, self).__init__(**kwargs)
     self.n_classes = num_classes
     if corrupt_prob > 0:
       self.corrupt_labels(corrupt_prob)
@@ -82,7 +82,7 @@ def load_dataset(dataset='cifar10', datapath='cifar10/data', batch_size=128, \
                 normalize,
             ])
 
-        trainset = torchvision.datasets.CIFAR100(root=data_folder, train=True,
+        trainset = torchvision.datasets.CIFAR10(root=data_folder, train=True,
                                                 download=True, transform=transform)
         # If data_split>1, then randomly select a subset of the data. E.g., if datasplit=3, then
         # randomly choose 1/3 of the data.
@@ -104,7 +104,7 @@ def load_dataset(dataset='cifar10', datapath='cifar10/data', batch_size=128, \
             kwargs = {'num_workers': 2, 'pin_memory': True}
             train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
                                                       shuffle=False, **kwargs)
-        testset = torchvision.datasets.CIFAR100(root=data_folder, train=False,
+        testset = torchvision.datasets.CIFAR10(root=data_folder, train=False,
                                                download=False, transform=transform)
         test_loader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
                                                   shuffle=False, num_workers=threads)
@@ -123,7 +123,7 @@ def load_dataset(dataset='cifar10', datapath='cifar10/data', batch_size=128, \
                 transforms.ToTensor(),
                 normalize,
             ])
-        trainset = CIFAR100RandomLabels(1.0,root=data_folder,download=True,transform=transform,train=True)
+        trainset = CIFAR10RandomLabels(1.0,root=data_folder,download=True,transform=transform,train=True)
        
         # If data_split>1, then randomly select a subset of the data. E.g., if datasplit=3, then
         # randomly choose 1/3 of the data.
@@ -145,7 +145,7 @@ def load_dataset(dataset='cifar10', datapath='cifar10/data', batch_size=128, \
             kwargs = {'num_workers': 2, 'pin_memory': True}
             train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
                                                       shuffle=False, **kwargs)
-        testset = torchvision.datasets.CIFAR100(root=data_folder, train=False,
+        testset = torchvision.datasets.CIFAR10(root=data_folder, train=False,
                                                download=False, transform=transform)
         test_loader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
                                                   shuffle=False, num_workers=threads)
@@ -161,7 +161,7 @@ def load_dataset(dataset='cifar10', datapath='cifar10/data', batch_size=128, \
 ###############################################################
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='PyTorch CIFAR100 Training')
+    parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
     parser.add_argument('--mpi', '-m', action='store_true', help='use mpi')
     parser.add_argument('--cuda', '-c', action='store_true', help='use cuda')
     parser.add_argument('--threads', default=2, type=int, help='number of threads')

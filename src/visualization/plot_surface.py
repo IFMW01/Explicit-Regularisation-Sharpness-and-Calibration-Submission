@@ -409,7 +409,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # download CIFAR10 if it does not exit
     if rank == 0 and args.dataset == "cifar10":
-        torchvision.datasets.CIFAR100(
+        torchvision.datasets.CIFAR10(
             root=args.dataset + "/data", train=True, download=True
         )
 
