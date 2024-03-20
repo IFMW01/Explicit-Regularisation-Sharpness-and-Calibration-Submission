@@ -21,6 +21,9 @@ Install other requirements
 pip install -r requirements.txt
 ```
 
+## Calculating Sharpness Measures
+
+To calculate sharpness measures for an arbitrary classification network, simply instanciate the `MetricsProcessor` class found in `src/trainers/metrics_processing.py` with the trained model and data loaders. Then call `.sharpness_metrics()`. Which sharpness measures are calculated can be configured with a config object passed to `MetricsProcessor`.
 
 ## Runs
 
