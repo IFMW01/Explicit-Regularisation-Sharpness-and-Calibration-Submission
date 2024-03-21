@@ -27,6 +27,8 @@ To calculate sharpness measures for an arbitrary classification network, simply 
 
 ## Experiments
 
+Specify in the config which metrics/measures to compute. To replicate our results, run the following for CIFAR10 and CIFAR100:
+
 ```
 python main.py \
     --config_file ../configs/base_config.yaml \
@@ -42,14 +44,6 @@ python main.py \
     --aug True \
     --dataset CIFAR10  \
     --save_name baseline_augmentations 
-
-python main.py \
-    --config_file ../configs/base_config.yaml \
-    --model_name VGG19 \
-    --baseline True \
-    --dropout 0.1 \
-    --dataset CIFAR10  \
-    --save_name baseline_dropout_0_1 
 
 python main.py \
     --config_file ../configs/base_config.yaml \
