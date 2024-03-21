@@ -1,5 +1,5 @@
 # Training parameters
-seed: [17] # overwritten in main.py 
+seed: [43, 91, 17] 
 batch_size: 256
 learning_rate: 0.05
 momentum: 0.9

@@ -34,7 +34,7 @@ python main.py \
     --save_name baseline 
 
 python main.py \
-    --config_file ../configs/base_config.yaml \
+    --config_file ../configs/reliability_plots.yaml \
     --model_name VGG19 \
     --baseline True \
     --aug True \

@@ -212,7 +212,7 @@ def main(seed=None, run_num=0):
             print("Adversarial initialisation")
             adversarial_initialization = f"../models/adversarial/CIFAR10/VGG19/adversarial_initialization/{seed}/adversarial_initialization.pth"
             model.load_state_dict(
-                torch.load(adversarial_initialization),
+                torch.load(adversarial_initialization, map_location=torch.device(device)),
             )
         else:
             raise Exception("Approach not specified")
@@ -225,10 +225,10 @@ def main(seed=None, run_num=0):
         print(f"Found model in {config.models_dir}/best_{config.save_name}, loading it up!")
         best_model = copy.deepcopy(model)
         model.load_state_dict(
-            torch.load(f"{config.models_dir}/{config.save_name}.pth"), 
+            torch.load(f"{config.models_dir}/{config.save_name}.pth", map_location=torch.device(device)), 
         )
         best_model.load_state_dict(
-            torch.load(f"{config.models_dir}/best_{config.save_name}.pth"),
+            torch.load(f"{config.models_dir}/best_{config.save_name}.pth", map_location=torch.device(device)),
         )
 
 
@@ -250,13 +250,13 @@ def main(seed=None, run_num=0):
     else:
         temp_model = ModelWithTemperature(model, device=device)
         temp_model.load_state_dict(
-            torch.load(f"{config.models_dir}/with_temperature_{config.save_name}.pth"),
+            torch.load(f"{config.models_dir}/with_temperature_{config.save_name}.pth", map_location=torch.device(device)),
         )
 
 
         temp_best_model = ModelWithTemperature(model, device=device)
         temp_best_model.load_state_dict(
-            torch.load(f"{config.models_dir}/best_with_temperature_{config.save_name}.pth"),
+            torch.load(f"{config.models_dir}/best_with_temperature_{config.save_name}.pth", map_location=torch.device(device)),
         )
 
     model_dict = {

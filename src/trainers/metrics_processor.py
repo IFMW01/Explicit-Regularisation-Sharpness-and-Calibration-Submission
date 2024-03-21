@@ -491,7 +491,7 @@ class MetricsProcessor:
         data = [str(x) for x in data]
         data = " ".join(data)
 
-        tikz_plot = template.replace("FILL-IN-ECE-HERE", str(round(ECE, 2)))
+        tikz_plot = template.replace("FILL-IN-ECE-HERE", str(round(ECE, 1)))
         tikz_plot = tikz_plot.replace("FILL-IN-MODEL-DATA-HERE", data)
 
         with open(self.config.models_dir / f"{self.model_name}_reliability_plot.tex", "w") as f:
