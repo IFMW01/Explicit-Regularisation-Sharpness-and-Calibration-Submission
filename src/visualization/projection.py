@@ -2,15 +2,17 @@
     Project a model or multiple models to a plane spaned by given directions.
 """
 
+import copy
+import os
+
+import h5_util
+import h5py
+import model_loader
+import net_plotter
 import numpy as np
 import torch
-import os
-import copy
-import h5py
-import net_plotter
-import model_loader
-import h5_util
 from sklearn.decomposition import PCA
+
 
 def tensorlist_to_tensor(weights):
     """ Concatnate a list of tensors into one tensor.
