@@ -27,12 +27,6 @@ def options_parser():
         help="Is this the baseline model: True is yes, LEAVE BLANK FOR NO.",
     )
     parser.add_argument(
-        "--adversarial",
-        default=False,
-        type=bool,
-        help="Is this the adversarial model: True is yes, LEAVE BLANK FOR NO.",
-    )
-    parser.add_argument(
         "--model_name",
         required=True,
         type=str,
@@ -165,12 +159,8 @@ def main(seed=None, run_num=0):
     else:
         raise NotImplementedError(f"Model {config.model_name} not implemented")
 
-    if args.baseline and args.adversarial:
-        approach = "baseline-adversarial"
-    elif args.baseline:
+    if args.baseline:
         approach = "baseline"
-    elif args.adversarial:
-        approach = "from-adversarial"
     else:
         raise Exception("Approach not specified")
 
@@ -208,12 +198,6 @@ def main(seed=None, run_num=0):
         if args.baseline:
             print("Random initialisation")
             save_model(model, save_file_name="initialisation", save_dir=config.models_dir)
-        elif args.adversarial:
-            print("Adversarial initialisation")
-            adversarial_initialization = f"../models/adversarial/CIFAR10/VGG19/adversarial_initialization/{seed}/adversarial_initialization.pth"
-            model.load_state_dict(
-                torch.load(adversarial_initialization, map_location=torch.device(device)),
-            )
         else:
             raise Exception("Approach not specified")
 
