@@ -25,9 +25,8 @@ pip install -r requirements.txt
 
 To calculate sharpness measures for an arbitrary classification network, simply instanciate the `MetricsProcessor` class found in `src/trainers/metrics_processing.py` with the trained model and data loaders. Then call `.sharpness_metrics()`. Which sharpness measures are calculated can be configured with a config object passed to `MetricsProcessor`.
 
-## Runs
+## Experiments
 
-### Random initialization:
 ```
 python main.py \
     --config_file ../configs/base_config.yaml \
@@ -69,63 +68,6 @@ python main.py \
     --save_name baseline_weight_decay_0_0005
 
 ```
-
-### Adversarial initialization
-
-#### Find the adversarial initialisation
-```
-python main.py \
-    --config_file ../configs/base_config.yaml \
-    --model_name VGG19 \
-    --baseline True \
-    --adversarial True \
-    --dataset CIFAR10  \
-    --save_name adversarial_initialization 
-```
-
-##### Train models from there
-```
-python main.py \
-    --config_file ../configs/base_config.yaml \
-    --model_name VGG19 \
-    --adversarial True \
-    --dataset CIFAR10  \
-    --save_name adversarial_baseline 
-
-python main.py \
-    --config_file ../configs/base_config.yaml \
-    --model_name VGG19 \
-    --adversarial True \
-    --aug True \
-    --dataset CIFAR10  \
-    --save_name adversarial_augmentations 
-
-python main.py \
-    --config_file ../configs/base_config.yaml \
-    --model_name VGG19 \
-    --adversarial True \
-    --dropout 0.1 \
-    --dataset CIFAR10  \
-    --save_name adversarial_dropout_0_1 
-
-python main.py \
-    --config_file ../configs/base_config.yaml \
-    --model_name VGG19 \
-    --adversarial True \
-    --dropout 0.5 \
-    --dataset CIFAR10  \
-    --save_name adversarial_dropout_0_5 
-
-python main.py \
-    --config_file ../configs/base_config.yaml \
-    --model_name VGG19 \
-    --adversarial True \
-    --weight_decay 5e-4 \
-    --dataset CIFAR10  \
-    --save_name adversarial_weight_decay_0_05
-
-```
-
 
 
 Repository from the Visualizing Loss Landscapes Paper to visualise loss landscape results (src/vizualisation)
