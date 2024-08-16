@@ -1,5 +1,5 @@
 # Training parameters
-seed: [91, 17] # overwritten in main.py 
+seed: [41, 91, 17] # overwritten in main.py 
 batch_size: 256
 learning_rate: 0.05
 momentum: 0.9
@@ -29,9 +29,9 @@ cifar_dir: ../data/cifar
 wandb:
   use_wandb: True
   experiment_name: '' # overwritten in main.py
-  project: 'ResNet_TEST'
+  project: 'ResNet_CIFAR_10'
   entity: 'r252_project'
 
 # Sharpness calculation
-sharpness_dataset_size: 1500
-sharpness_batch_size: 750
+sharpness_dataset_size: 3000
+sharpness_batch_size: 1500
