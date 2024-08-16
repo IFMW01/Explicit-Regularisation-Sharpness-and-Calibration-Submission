@@ -23,7 +23,7 @@ class BasicBlock(nn.Module):
                 nn.BatchNorm2d(self.expansion*planes)
             )
 
-    def forward(self, x):
+    def forward(self, x, return_feat=False):
         out = F.relu(self.bn1(self.conv1(x)))
         if self.dropout is not None:
             out = self.dropout(out)
@@ -44,7 +44,7 @@ class ResNet_cifar(nn.Module):
         self.layer1 = self._make_layer(block, 16, num_blocks[0],dropout, stride=1)
         self.layer2 = self._make_layer(block, 32, num_blocks[1],dropout, stride=2)
         self.layer3 = self._make_layer(block, 64, num_blocks[2],dropout, stride=2)
-        self.linear = nn.Linear(64*block.expansion, num_classes)
+        self.classifier = nn.Linear(64*block.expansion, num_classes)
         if dropout>0.0:
             self.dropout =nn.Dropout(dropout)
         else:
@@ -57,8 +57,8 @@ class ResNet_cifar(nn.Module):
             layers.append(block(self.in_planes, planes, stride,dropout))
             self.in_planes = planes * block.expansion
         return nn.Sequential(*layers)
-
-    def forward(self, x):
+    
+    def forward(self, x, return_feat=False):
         out = F.relu(self.bn1(self.conv1(x)))
         if self.dropout is not None:
             out = self.dropout(out)
@@ -66,6 +66,8 @@ class ResNet_cifar(nn.Module):
         out = self.layer2(out)
         out = self.layer3(out)
         out = F.avg_pool2d(out, 8)
-        out = out.view(out.size(0), -1)
-        out = self.linear(out)
+        features = out.view(out.size(0), -1)
+        out = self.classifier(features)
+        if return_feat:
+            return out, features.squeeze()
         return out
