@@ -49,25 +49,25 @@ class DataLoaderManager:
         g = torch.Generator()
         g.manual_seed(self.seed)
 
-        if self.config.adversarial == True and self.config.baseline == True:
-            print("Loading random label train data")
-            train_dataset = cifar_random_lables.get_random_cifar_dataset(
-                self.dataset,
-                self.num_classes,
-                corrupt_prob=1.0,
-                root=self.config.cifar_dir,
-                download=True,
-                transform=self.aug_transformations if self.config.aug else self.base_transformations,
-                train=True,
-            )
-        else:
-            print("Loading normal train data")
-            train_dataset = self.dataset(
-                root=self.config.cifar_dir,
-                train=True,
-                download=True,
-                transform=self.aug_transformations if self.config.aug else self.base_transformations,
-            )
+        # if self.config.adversarial == True and self.config.baseline == True:
+        #     print("Loading random label train data")
+        #     train_dataset = cifar_random_lables.get_random_cifar_dataset(
+        #         self.dataset,
+        #         self.num_classes,
+        #         corrupt_prob=1.0,
+        #         root=self.config.cifar_dir,
+        #         download=True,
+        #         transform=self.aug_transformations if self.config.aug else self.base_transformations,
+        #         train=True,
+        #     )
+        # else:
+        print("Loading normal train data")
+        train_dataset = self.dataset(
+            root=self.config.cifar_dir,
+            train=True,
+            download=True,
+            transform=self.aug_transformations if self.config.aug else self.base_transformations,
+        )
 
         eval_dataset = self.dataset(
             root=self.config.cifar_dir,
