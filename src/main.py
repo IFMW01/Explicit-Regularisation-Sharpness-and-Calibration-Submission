@@ -13,6 +13,7 @@ from easydict import EasyDict
 
 import data_loader_manager.dataloaders as dataloaders
 import models.vgg_model as vgg_model
+import models.resnet_model as resnet_model
 import trainers.classification_executor as classification_executor
 import trainers.metrics_processor as metrics_processor
 from models.temperature_scaling import ModelWithTemperature
@@ -30,7 +31,7 @@ def options_parser():
         "--model_name",
         required=True,
         type=str,
-        help='Type of Model: i.e. "VGG9","VGG16" or "VGG19"',
+        help='Type of Model: i.e. "VGG9","VGG16" or "VGG19 or "ResNet20"',
     )
     parser.add_argument(
         "--aug",
@@ -156,6 +157,14 @@ def main(seed=None, run_num=0):
             num_classes=data_loader_manager.num_classes,
             vgg_config=config.config_dir / config.vgg_config,
         ).to(device)
+    elif config.model_name.startswith("ResNet20"):
+        if args.dataset == 'CIFAR100':
+            num_classes = 100
+        else:
+            num_classes = 10
+        depth = 20
+        n = (depth - 2) // 6
+        model = resnet_model.ResNet_cifar(resnet_model.BasicBlock, [n,n,n],num_classes,args.dropout).to(device)
     else:
         raise NotImplementedError(f"Model {config.model_name} not implemented")
 
