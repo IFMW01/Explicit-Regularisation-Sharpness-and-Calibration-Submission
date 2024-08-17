@@ -14,6 +14,7 @@ from easydict import EasyDict
 import data_loader_manager.dataloaders as dataloaders
 import models.vgg_model as vgg_model
 import models.resnet_model as resnet_model
+import models.ViT as ViT_model
 import trainers.classification_executor as classification_executor
 import trainers.metrics_processor as metrics_processor
 from models.temperature_scaling import ModelWithTemperature
@@ -165,6 +166,26 @@ def main(seed=None, run_num=0):
         depth = 20
         n = (depth - 2) // 6
         model = resnet_model.ResNet_cifar(resnet_model.BasicBlock, [n,n,n],num_classes,args.dropout).to(device)
+    elif config.model_name.startswith("ViT"):
+        
+        if args.dataset == 'CIFAR100':
+            num_classes = 100
+        else:
+            num_classes = 10
+
+        model = ViT_model.ViT(
+        patch_height = 16,
+        patch_width = 16,
+        embedding_dims = 768,
+        dropout = args.dropout,
+        heads = 4,
+        num_layers = 4,
+        forward_expansion = 4,
+        max_len = int((32*32)/(16*16)),
+        layer_norm_eps = 1e-5,
+        num_classes = num_classes,
+        ).to(device)
+
     else:
         raise NotImplementedError(f"Model {config.model_name} not implemented")
 
