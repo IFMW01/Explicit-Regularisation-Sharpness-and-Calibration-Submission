@@ -62,6 +62,8 @@ class MetricsProcessor:
     def get_vec_params(self, weights):
         return torch.cat([p.view(-1) for p in weights], dim=0)
 
+    
+
     @torch.no_grad()
     @contextmanager
     def perturbed_model(self, sigma: float, rng, magnitude_eps=None):
@@ -165,6 +167,39 @@ class MetricsProcessor:
         train_loss = avg_loss(all_outputs, all_y)
 
         return train_loss, all_outputs, all_feat, all_y
+    
+    @torch.no_grad()
+    def sam_sharpness(self):
+        
+        num_params = sum(torch.numel(x) for x in self.model.parameters())
+        def get_loss(model):
+            loss_fn = torch.nn.CrossEntropyLoss()
+            losses = []
+            with torch.no_grad():
+                for X,y in tqdm(self.train_dataloader):
+                    losses.append(loss_fn(model(X.cuda()),y.cuda()).item())
+
+            return np.mean(losses)
+        
+        original_loss = get_loss(self.model)
+        new_losses = []
+        for _ in range(10):
+            new_state_dict = deepcopy(self.model.state_dict())
+
+            ro = 0.05
+
+            for param_name in new_state_dict:
+                if new_state_dict[param_name].dtype != torch.int64:
+                    new_state_dict[param_name] += torch.randn_like(new_state_dict[param_name]) / (num_params**0.5) *ro
+
+            new_model = deepcopy(self.model)
+            new_model.load_state_dict(new_state_dict)
+
+            loss = get_loss(new_model)
+
+            new_losses.append((loss-original_loss)/ro)
+
+        return max(new_losses)
 
     def hessian_single_layer(self, layer, train_loss):
         # hessian calculation for the layer of interest

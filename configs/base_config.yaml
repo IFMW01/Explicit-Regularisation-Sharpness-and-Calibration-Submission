@@ -19,6 +19,7 @@ metrics:
   - fisher_rao_norm
   # - relative_flatness
   # - IGS
+  # - sam_sharpness
 #  - pacbayes_flatness
 
 # Other directories
