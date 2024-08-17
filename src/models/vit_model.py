@@ -150,10 +150,9 @@ class ViT(nn.Module):
         mask = None
         for block in self.vit_blocks:
             x = block(x, mask)
-        out = self.to_cls_token(x[:, 0])
-        features = out.view(out.size(0), -1)
-        out = self.preclassifier(out)
-        out = self.classifier(out)
+        x = self.to_cls_token(x[:, 0])
+        features = self.preclassifier(x)
+        out = self.classifier(features)
 
         if return_feat:
             return out, features.squeeze()
