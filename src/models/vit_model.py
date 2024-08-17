@@ -122,13 +122,13 @@ class ViT(nn.Module):
         self.patch_embeddings = nn.Linear(embedding_dims, embedding_dims)
         self.postional_embedding = nn.Parameter(torch.zeros(1, max_len+1, embedding_dims))
         self.to_cls_token = nn.Identity()
-        self.classifier = nn.Sequential(
+        self.preclassifier = nn.Sequential(
             nn.LayerNorm(embedding_dims),
             nn.Linear(embedding_dims, num_classes*4),
             nn.GELU(),
-            nn.Dropout(dropout),
-            nn.Linear(num_classes*4, num_classes)
-        )
+            nn.Dropout(dropout))
+        
+        self.classifier = nn.Linear(num_classes*4, num_classes)
         self.dropout = nn.Dropout(dropout)
 
 
@@ -152,6 +152,7 @@ class ViT(nn.Module):
             x = block(x, mask)
         out = self.to_cls_token(x[:, 0])
         features = out.view(out.size(0), -1)
+        out = self.preclassifier(out)
         out = self.classifier(out)
 
         if return_feat:
