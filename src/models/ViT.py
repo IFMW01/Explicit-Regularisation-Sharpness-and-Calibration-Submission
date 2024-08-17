@@ -1,6 +1,8 @@
 import torch 
 import torch.nn as nn
 
+# https://github.com/ShivamRajSharma/Vision-Transformer/blob/master/ImageTransformer.py
+
 
 class SelfAttention(nn.Module):
     def __init__(
