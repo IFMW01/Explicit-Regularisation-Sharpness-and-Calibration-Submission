@@ -17,9 +17,9 @@ metrics:
   # - max_hessian_eigenvalue
   # - hessian_trace
   - fisher_rao_norm
+  - sam_sharpness
   # - relative_flatness
   # - IGS
-  # - sam_sharpness
 #  - pacbayes_flatness
 
 # Other directories
@@ -30,7 +30,7 @@ cifar_dir: ../data/cifar
 wandb:
   use_wandb: True
   experiment_name: '' # overwritten in main.py
-  project: 'ViT_CIFAR_100'
+  project: 'ViT_CIFAR_REDO_100'
   entity: 'r252_project'
 
 # Sharpness calculation
