@@ -1,4 +1,4 @@
-# R252 Theory of Deep Learning Project
+# Explicit Regularisation, Sharpness and Calibration. 
 
 ## Setup
 
